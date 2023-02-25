@@ -1,0 +1,16 @@
+topics:
+  tf: /tf
+  imu: /zedm/zed_node/imu/data
+  rgb: /zedm/zed_node/rgb/image_rect_color
+  depth: /zedm/zed_node/depth/depth_registered
+  confidence: /zedm/zed_node/confidence/confidence_map
+  disparity: /zedm/zed_node/disparity/disparity_image
+recording:
+  script: record_zed.sh
+  save_dir: null
+  bag_folder: ../../bag
+  camera_params_folder: ../../config/saved_configs/recorder_configs/${now:%Y-%m-%d}/${now:%H-%M-%S}/camera_params
+  topics_to_rec:
+  - imu
+  - rgb
+  - depth

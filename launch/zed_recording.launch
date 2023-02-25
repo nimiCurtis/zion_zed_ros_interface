@@ -1,0 +1,9 @@
+<!-- -*- xml -*- -->
+<!--
+  - launch the zed_operate launch file
+  - future developing - change arguments / params depends on config
+  -->
+
+<launch>
+  <include file="$(find env_recorder_pkg)/launch/zed_operate.launch" />
+</launch>
