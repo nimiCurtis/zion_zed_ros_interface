@@ -5,5 +5,5 @@
   -->
 
 <launch>
-  <include file="$(find env_recorder_pkg)/launch/zed_operate.launch" />
+  <include file="$(find zion_zed_ros_interface)/launch/zed_operate.launch" />
 </launch>

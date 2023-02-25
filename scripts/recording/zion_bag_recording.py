@@ -13,6 +13,7 @@ from hydra.utils import get_original_cwd, to_absolute_path
 
 from hydra import compose, initialize
 from omegaconf import OmegaConf
+
 from omegaconf import DictConfig
 import rospy
 import rosparam
@@ -20,6 +21,8 @@ import subprocess
 import os
 
 PATH = os.path.dirname(__file__)
+OmegaConf.register_resolver("path", lambda : PATH)
+                            
 class RosbagRecord:
     """TBD...
         
@@ -85,7 +88,7 @@ class RosbagRecord:
 # Use hydra for configuration managing
 @hydra.main( version_base=None ,config_path="../../config/recorder_config", config_name = "record")
 def main(cfg):
-    rospy.init_node('rosbag_record')                # Init node
+    rospy.init_node('zion_recording_node')                # Init node
     rospy.loginfo(rospy.get_name() + ' start')  
     print(os.path.dirname(__file__))
 
