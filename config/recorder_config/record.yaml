@@ -2,7 +2,7 @@
 hydra:
   run:
     #dir:  /home/zion/catkin_ws/src/ros_env_prediction/env_recorder_pkg/config/recorder_configs/${now:%Y-%m-%d}/${now:%H-%M-%S}
-    dir: /home/roblab20/catkin_ws/src/Exo_Intent/zion_zed_ros_interface/config/saved_configs/recorder_configs/${now:%Y-%m-%d}/${now:%H-%M-%S}
+    dir: /home/roblab20/catkin_ws/src/Exo_Intent/zion_zed_ros_interface/config/saved_configs/recorder_configs/${now:%Y-%m-%d}/${now:%H-%M}_config
     #dir: ./conf/recorder/records_configs/${hydra.job.name}/${now:%Y-%m-%d_%H-%M-%S}
     #dir: outputs/${now:%Y-%m-%d_%H-%M-%S}/rate:${recorder.rate}
 
