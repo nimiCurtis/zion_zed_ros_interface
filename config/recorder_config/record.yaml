@@ -20,7 +20,7 @@ recording:
   #script: /home/nimibot/catkin_ws/src/ros_env_prediction/env_recorder_pkg/scripts/brings_up/record_zed.sh
   bag_folder: ../../bag
   #bag_folder: /home/nimibot/catkin_ws/src/ros_env_prediction/env_recorder_pkg/bag
-  camera_params_folder: ../../config/saved_configs/recorder_configs/${now:%Y-%m-%d}/${now:%H-%M-%S}/camera_params 
+  camera_params_folder: ../../config/saved_configs/recorder_configs/${now:%Y-%m-%d}/${now:%H-%M}_config/camera_params 
   topics_to_rec:
     #- tf
     #- odom
