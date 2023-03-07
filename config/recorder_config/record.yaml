@@ -12,8 +12,6 @@ topics:
   disparity: /zedm/zed_node/disparity/disparity_image
   pcl: /zedm/zed_node/point_cloud/cloud_registered
 
-
-
 recording:
   script: record_zed.sh
   bag_folder: ../../bag/bag_batch_${now:%Y-%m-%d}_${now:%H-%M-%S}
@@ -29,4 +27,4 @@ recording:
     #- confidence
     #- disparity
 
-  label: 1                   # 1 = GL | 2 = SA | 3 = SD | 9 = W
+  label: null                   # 1 = GL | 2 = SA | 3 = SD | 9 = W
