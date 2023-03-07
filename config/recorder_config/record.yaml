@@ -1,9 +1,7 @@
 
 hydra:
   run:
-    dir: ${path:}/../../config/saved_configs/recorder_configs/${now:%Y-%m-%d}/${now:%H-%M}_config
-
-
+    dir: ${path:}/${recording.bag_folder}/saved_configs/recorder_configs/
 
 topics:
   tf: /tf
@@ -12,16 +10,15 @@ topics:
   depth: /zedm/zed_node/depth/depth_registered
   confidence: /zedm/zed_node/confidence/confidence_map
   disparity: /zedm/zed_node/disparity/disparity_image
+  pcl: /zedm/zed_node/point_cloud/cloud_registered
+
 
 
 recording:
   script: record_zed.sh
-  save_dir: 
-  #script: /home/nimibot/catkin_ws/src/ros_env_prediction/env_recorder_pkg/scripts/brings_up/record_zed.sh
-  bag_folder: ../../bag
-  #bag_folder: /home/nimibot/catkin_ws/src/ros_env_prediction/env_recorder_pkg/bag
-  camera_params_folder: ../../config/saved_configs/recorder_configs/${now:%Y-%m-%d}/${now:%H-%M}_config/camera_params 
-  topics_to_rec:
+  bag_folder: ../../bag/bag_batch_${now:%Y-%m-%d}_${now:%H-%M-%S}
+  camera_params_folder: ../../bag/bag_batch_${now:%Y-%m-%d}_${now:%H-%M-%S}/saved_configs/recorder_configs/camera_params
+  topics_to_rec: 
     #- tf
     #- odom
     #- pose
@@ -32,3 +29,4 @@ recording:
     #- confidence
     #- disparity
 
+  label: 1                   # 1 = GL | 2 = SA | 3 = SD | 9 = W
