@@ -14,10 +14,12 @@ topics:
 
 recording:
   script: record_zed.sh
-  bag_folder: ../../bag/bag_batch_${now:%Y-%m-%d}_${now:%H-%M-%S}
-  camera_params_folder: ../../bag/bag_batch_${now:%Y-%m-%d}_${now:%H-%M-%S}/saved_configs/recorder_configs/camera_params
+  label: null                   # 1 = GL | 2 = SA | 3 = SD | 9 = W
+  set: null
+  bag_folder: ../../bag/bag_batch_${now:%Y-%m-%d}_${now:%H-%M-%S}_${recording.set}
+  camera_params_folder: ${recording.bag_folder}/saved_configs/recorder_configs/camera_params
   topics_to_rec: 
-    #- tf
+    #- tf;  sdf
     #- odom
     #- pose
     - imu
@@ -27,4 +29,3 @@ recording:
     #- confidence
     #- disparity
 
-  label: null                   # 1 = GL | 2 = SA | 3 = SD | 9 = W
