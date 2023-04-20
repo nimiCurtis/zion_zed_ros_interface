@@ -36,7 +36,7 @@ video:
 depth:
     quality:                    4                               # '0': NONE, '1': PERFORMANCE, '2': QUALITY, '3': ULTRA, '4': NEURAL
     depth_stabilization:        1                               # `0`: disabled, `1`: enabled
-    openni_depth_mode:          false                           # 'false': 32bit float meters, 'true': 16bit uchar millimeters
+    openni_depth_mode:          true                           # 'false': 32bit float meters, 'true': 16bit uchar millimeters
     depth_downsample_factor:    0.5                             # Resample factor for depth data matrices [0.01,1.0] The SDK works with native data sizes, but publishes rescaled matrices (depth map, point cloud, ...)
 
 pos_tracking:
