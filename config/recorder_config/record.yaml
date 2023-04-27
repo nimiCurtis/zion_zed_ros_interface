@@ -11,15 +11,16 @@ topics:
   confidence: /zedm/zed_node/confidence/confidence_map
   disparity: /zedm/zed_node/disparity/disparity_image
   pcl: /zedm/zed_node/point_cloud/cloud_registered
+  pose: /zedm/zed_node/pose_with_covariance
 
 recording:
   script: record_zed.sh
-  label: null                   # 1 = GL | 2 = SA | 3 = SD | 9 = W
+  label: null                   # 1 = GL | 2 = SA | 3 = SD | 4 = W
   set: null
-  bag_folder: ../../bag/bag_batch_${now:%Y-%m-%d}_${now:%H-%M-%S}_${recording.set}
+  bag_folder: ../../bag/bag_batch_${now:%Y-%m-%d}_${now:%H-%M-%S}_${recording.label}_${recording.set}
   camera_params_folder: ${recording.bag_folder}/saved_configs/recorder_configs/camera_params
   topics_to_rec: 
-    #- tf;  sdf
+    #- tf
     #- odom
     #- pose
     - imu
