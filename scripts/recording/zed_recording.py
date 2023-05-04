@@ -15,13 +15,17 @@ import rospy
 import rosparam
 import subprocess
 import os
+import json
+import yaml
 from zion_msgs.srv import RecordBag, RecordBagRequest, RecordBagResponse
-from sensor_msgs.msg import Image
+from sensor_msgs.msg import Image, CameraInfo
+from tf2_msgs.msg import TFMessage
 from RosBagRecorder import RosBagRecord
+from rospy_message_converter import message_converter
 
 PATH = os.path.dirname(__file__)
 OmegaConf.register_resolver("path", lambda : PATH)
-                            
+
 
 class ZedRecordManager():
     
@@ -32,11 +36,11 @@ class ZedRecordManager():
         topics = cfg.topics
         topics_list = [topics.get(k) for k in topics_list_keys]
 
-
         self.record_script = os.path.join(PATH,cfg.recording.script)           # use bash script from path in config
         self.record_folder = os.path.join(PATH,cfg.recording.bag_folder)       # use folder to store the bag from path in config
         self.recorded_cam_params_folder =os.path.join(PATH,cfg.recording.camera_params_folder)
         
+        rospy.Subscriber('/tf_static', TFMessage, self._tf_static_callback)
         self.rosbag_record = RosBagRecord(topics_list=topics_list,
                                         record_script_path=self.record_script,
                                         record_folder=self.record_folder)
@@ -45,6 +49,7 @@ class ZedRecordManager():
         rospy.on_shutdown(self.shutdownhook)
 
         self._is_runing = False
+
         
     def shutdownhook(self):
         rospy.logwarn(rospy.get_name() + ' was shutdown by user')
@@ -52,7 +57,11 @@ class ZedRecordManager():
         
         if self._is_runing:
             self.rosbag_record.stop_recording_handler(record_runing=self._is_runing)
-
+    
+    def _tf_static_callback(self,msg:TFMessage):
+        rospy.wait_for_message("/tf_static",TFMessage,timeout=3)
+        self.tf_static = msg       
+    
     def _record_callback(self,request:RecordBagRequest):
         frames_num = request.frames_num
         record_duration = request.duration 
@@ -125,6 +134,7 @@ class ZedRecordManager():
             if not self.ctrl_c:
                 self.depth_img = rospy.wait_for_message("/zedm/zed_node/depth/depth_registered",Image,timeout=5)
                 self.save_zed_params()
+                self.save_camera_info()
                 self.record_service = rospy.Service('/zion/record_node/record',RecordBag,self._record_callback)
 
             rospy.spin()
@@ -137,10 +147,28 @@ class ZedRecordManager():
     def save_zed_params(self):
         # dump camera params
         rospy.loginfo("Saving camera params..")
-        os.mkdir(self.recorded_cam_params_folder)
+        if not os.path.exists(self.recorded_cam_params_folder):
+            os.mkdir(self.recorded_cam_params_folder)
         rosparam.dump_params(self.recorded_cam_params_folder+"/zedm.yaml",param="zedm")
+    
+    def save_camera_info(self):
+        rospy.loginfo("Saving camera info and static TFs..")
+        if not os.path.exists(self.recorded_cam_params_folder):
+            os.mkdir(self.recorded_cam_params_folder)
+            
 
-
+        camera_info_left = rospy.wait_for_message("/zedm/zed_node/left/camera_info",CameraInfo,timeout=5)
+        camera_info_right = rospy.wait_for_message("/zedm/zed_node/right/camera_info",CameraInfo,timeout=5)
+        info_dic={}
+        
+        
+        info_dic["tf_static"] = message_converter.convert_ros_message_to_dictionary(self.tf_static)
+        info_dic["left_camera_info"] = message_converter.convert_ros_message_to_dictionary(camera_info_left)
+        info_dic["right_camera_info"] = message_converter.convert_ros_message_to_dictionary(camera_info_right)
+        file_path = os.path.join(self.recorded_cam_params_folder,"camera_info.yaml")
+        with open(file_path, 'w') as file:
+            documents = yaml.dump(info_dic, file)
+        
 # Use hydra for configuration managing
 @hydra.main( version_base=None ,config_path="../../config/recorder_config", config_name = "record")
 def main(cfg):
