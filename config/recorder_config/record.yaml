@@ -20,7 +20,7 @@ recording:
   bag_folder: ../../bag/bag_batch_${now:%Y-%m-%d}_${now:%H-%M-%S}_${recording.label}_${recording.set}
   camera_params_folder: ${recording.bag_folder}/saved_configs/recorder_configs/camera_params
   topics_to_rec: 
-    #- tf
+    - tf
     #- odom
     #- pose
     - imu
