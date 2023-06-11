@@ -12,6 +12,9 @@ topics:
   disparity: /zedm/zed_node/disparity/disparity_image
   pcl: /zedm/zed_node/point_cloud/cloud_registered
   pose: /zedm/zed_node/pose_with_covariance
+  env_clf: /zion/env_clf_node/clf_result
+  depth_synced: /zion/env_clf_node/depth_synced
+
 
 recording:
   script: record_zed.sh
@@ -22,10 +25,12 @@ recording:
   topics_to_rec: 
     - tf
     #- odom
-    #- pose
-    - imu
+    - pose
+    #- imu
     - rgb
     - depth
+    - env_clf
+    - depth_synced
     #- pcl
     #- confidence
     #- disparity
