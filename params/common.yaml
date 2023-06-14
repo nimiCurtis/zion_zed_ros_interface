@@ -65,7 +65,7 @@ mapping:
     clicked_point_topic:        '/clicked_point'                # Topic published by Rviz when a point of the cloud is clicked. Used for plane detection
 
 sensors:
-    sensors_timestamp_sync:     false                           # Synchronize Sensors messages timestamp with latest received frame
+    sensors_timestamp_sync:     true                           # Synchronize Sensors messages timestamp with latest received frame
     max_pub_rate:               400.                            # max frequency of publishing of sensors data. MAX: 400. - MIN: grab rate
     publish_imu_tf:             true                            # publish `IMU -> <cam_name>_left_camera_frame` TF
 
