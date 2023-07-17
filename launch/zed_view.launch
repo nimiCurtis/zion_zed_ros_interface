@@ -1,0 +1,12 @@
+<!-- -*- xml -*- -->
+<!--
+  - launch the zed_operate launch file
+  - future developing - change arguments / params depends on config
+  -->
+
+<launch>
+    <!-- Parsing xacro and setting robot_description parameter -->
+    <!-- <param name="robot_description" command="$(find xacro)/xacro $(find fellowme_description)/urdf/fellowme.urdf.xacro" /> -->
+    <!-- Launch visualization in rviz -->
+    <node name="rviz" pkg="rviz" type="rviz" args="-d $(find zion_zed_ros_interface)/rviz/zed_display.rviz" required="true" />
+</launch>
