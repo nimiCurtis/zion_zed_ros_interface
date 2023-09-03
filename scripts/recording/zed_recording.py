@@ -40,7 +40,7 @@ class ZedRecordManager():
         self.record_folder = os.path.join(PATH,cfg.recording.bag_folder)       # use folder to store the bag from path in config
         self.recorded_cam_params_folder =os.path.join(PATH,cfg.recording.camera_params_folder)
         
-        rospy.Subscriber('/tf_static', TFMessage, self._tf_static_callback)
+        
         self.rosbag_record = RosBagRecord(topics_list=topics_list,
                                         record_script_path=self.record_script,
                                         record_folder=self.record_folder)
@@ -58,9 +58,7 @@ class ZedRecordManager():
         if self._is_runing:
             self.rosbag_record.stop_recording_handler(record_runing=self._is_runing)
     
-    def _tf_static_callback(self,msg:TFMessage):
-        rospy.wait_for_message("/tf_static",TFMessage,timeout=3)
-        self.tf_static = msg       
+  
     
     def _record_callback(self,request:RecordBagRequest):
         frames_num = request.frames_num
@@ -104,7 +102,7 @@ class ZedRecordManager():
         self._is_runing = False
 
     def _record_duration_depend(self, duration):
-        rospy.loginfo("Start recording process for {} secs")
+        rospy.loginfo(f"Start recording process for {duration} secs")
 
         last_time = rospy.Time.now()
         current_time = rospy.Time.now()
@@ -161,8 +159,16 @@ class ZedRecordManager():
         camera_info_right = rospy.wait_for_message("/zedm/zed_node/right/camera_info",CameraInfo,timeout=5)
         info_dic={}
         
+        tf_static_imu = rospy.wait_for_message("/tf_static",TFMessage,timeout=0.1)
+        while len(tf_static_imu.transforms)!=1:
+            tf_static_imu = rospy.wait_for_message("/tf_static",TFMessage,timeout=0.1)
+
+        tf_static_expand = rospy.wait_for_message("/tf_static",TFMessage,timeout=0.1)
+        while len(tf_static_expand.transforms)==1:
+            tf_static_expand = rospy.wait_for_message("/tf_static",TFMessage,timeout=0.1)
         
-        info_dic["tf_static"] = message_converter.convert_ros_message_to_dictionary(self.tf_static)
+        info_dic["tf_static_imu"] = message_converter.convert_ros_message_to_dictionary(tf_static_imu)
+        info_dic["tf_static_expand"] = message_converter.convert_ros_message_to_dictionary(tf_static_expand)
         info_dic["left_camera_info"] = message_converter.convert_ros_message_to_dictionary(camera_info_left)
         info_dic["right_camera_info"] = message_converter.convert_ros_message_to_dictionary(camera_info_right)
         file_path = os.path.join(self.recorded_cam_params_folder,"camera_info.yaml")

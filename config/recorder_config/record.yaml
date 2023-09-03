@@ -4,6 +4,7 @@ hydra:
     dir: ${path:}/${recording.bag_folder}/saved_configs/recorder_configs/
 
 topics:
+  tf_static: /tf_static
   tf: /tf
   imu: /zedm/zed_node/imu/data
   rgb: /zedm/zed_node/rgb/image_rect_color
@@ -24,13 +25,14 @@ recording:
   camera_params_folder: ${recording.bag_folder}/saved_configs/recorder_configs/camera_params
   topics_to_rec: 
     - tf
+    - tf_static
     #- odom
     - pose
     #- imu
     - rgb
     - depth
-    - env_clf
-    - depth_synced
+    #- env_clf
+    #- depth_synced
     #- pcl
     #- confidence
     #- disparity
