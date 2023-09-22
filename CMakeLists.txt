@@ -16,6 +16,8 @@ find_package(catkin REQUIRED COMPONENTS
   sensor_msgs
   std_msgs
   zion_msgs
+  tf2_ros
+  tf
 )
 
 ## System dependencies are found with CMake's conventions
@@ -209,3 +211,8 @@ include_directories(
 
 ## Add folders to be run by python nosetests
 # catkin_add_nosetests(test)
+
+
+add_executable(zion_tf2_broadcaster src/zion_tf2_broadcaster.cpp)
+add_dependencies(zion_tf2_broadcaster ${zion_tf2_broadcaster_EXPORTED_TARGETS} ${catkin_EXPORTED_TARGETS})
+target_link_libraries(zion_tf2_broadcaster ${catkin_LIBRARIES})
