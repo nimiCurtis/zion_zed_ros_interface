@@ -50,15 +50,13 @@ class ZedRecordManager():
 
         self._is_runing = False
 
-        
+
     def shutdownhook(self):
         rospy.logwarn(rospy.get_name() + ' was shutdown by user')
         self.ctrl_c = True
         
         if self._is_runing:
             self.rosbag_record.stop_recording_handler(record_runing=self._is_runing)
-    
-  
     
     def _record_callback(self,request:RecordBagRequest):
         frames_num = request.frames_num
@@ -127,7 +125,7 @@ class ZedRecordManager():
         self._is_runing = True
     
     def record(self):
-        
+
         try:
             if not self.ctrl_c:
                 self.depth_img = rospy.wait_for_message("/zedm/zed_node/depth/depth_registered",Image,timeout=5)
@@ -141,24 +139,22 @@ class ZedRecordManager():
             rospy.logwarn("ZED node didn't start")
             self.rosbag_record.stop_recording_handler(record_runing=self._is_runing)
 
-            
     def save_zed_params(self):
         # dump camera params
         rospy.loginfo("Saving camera params..")
         if not os.path.exists(self.recorded_cam_params_folder):
             os.mkdir(self.recorded_cam_params_folder)
         rosparam.dump_params(self.recorded_cam_params_folder+"/zedm.yaml",param="zedm")
-    
+
     def save_camera_info(self):
         rospy.loginfo("Saving camera info and static TFs..")
         if not os.path.exists(self.recorded_cam_params_folder):
             os.mkdir(self.recorded_cam_params_folder)
-            
 
         camera_info_left = rospy.wait_for_message("/zedm/zed_node/left/camera_info",CameraInfo,timeout=5)
         camera_info_right = rospy.wait_for_message("/zedm/zed_node/right/camera_info",CameraInfo,timeout=5)
         info_dic={}
-        
+
         tf_static_imu = rospy.wait_for_message("/tf_static",TFMessage,timeout=0.1)
         while len(tf_static_imu.transforms)!=1:
             tf_static_imu = rospy.wait_for_message("/tf_static",TFMessage,timeout=0.1)
@@ -166,7 +162,7 @@ class ZedRecordManager():
         tf_static_expand = rospy.wait_for_message("/tf_static",TFMessage,timeout=0.1)
         while len(tf_static_expand.transforms)==1:
             tf_static_expand = rospy.wait_for_message("/tf_static",TFMessage,timeout=0.1)
-        
+
         info_dic["tf_static_imu"] = message_converter.convert_ros_message_to_dictionary(tf_static_imu)
         info_dic["tf_static_expand"] = message_converter.convert_ros_message_to_dictionary(tf_static_expand)
         info_dic["left_camera_info"] = message_converter.convert_ros_message_to_dictionary(camera_info_left)
@@ -174,7 +170,7 @@ class ZedRecordManager():
         file_path = os.path.join(self.recorded_cam_params_folder,"camera_info.yaml")
         with open(file_path, 'w') as file:
             documents = yaml.dump(info_dic, file)
-        
+
 # Use hydra for configuration managing
 @hydra.main( version_base=None ,config_path="../../config/recorder_config", config_name = "record")
 def main(cfg):
@@ -183,10 +179,10 @@ def main(cfg):
     try:
         rospy.init_node('zion_recording_node')                # Init node
         rospy.loginfo(rospy.get_name() + ' start')
-        
+
         zed_recorder_manager = ZedRecordManager(cfg)
         zed_recorder_manager.record()
-        
+
     except rospy.ROSInterruptException:
         pass
 

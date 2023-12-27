@@ -32,7 +32,7 @@ class RosBagRecord:
         """        
         self.record_folder = record_folder      # use folder to store the bag from path in config        
         self.command = "source " + record_script_path +" "+" ".join(topics_list) # build rosbag command depend on the topic list        
-        
+
     def start(self):
         
         self.p = subprocess.Popen(self.command, 
@@ -40,10 +40,9 @@ class RosBagRecord:
                                     cwd=self.record_folder,
                                     shell=True,
                                     executable='/bin/bash') 
-        
+
         # effectively go into an infinite loop until it receives a shutdown signal
-        
-        
+
 
     def terminate_ros_node(self, s):
         """This function terminate the ros node starting with the given argument

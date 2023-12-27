@@ -7,14 +7,14 @@ topics:
   tf_static: /tf_static
   tf: /tf
   imu: /zedm/zed_node/imu/data
-  rgb: /zedm/zed_node/rgb/image_rect_color
+  rgb: /zedm/zed_node/rgb/image_rect_color/compressed ##/zedm/zed_node/rgb/image_rect_color
   depth: /zedm/zed_node/depth/depth_registered
   confidence: /zedm/zed_node/confidence/confidence_map
   disparity: /zedm/zed_node/disparity/disparity_image
   pcl: /zedm/zed_node/point_cloud/cloud_registered
   pose: /zedm/zed_node/pose_with_covariance
   env_clf: /zion/env_clf_node/clf_result
-  depth_synced: /zion/env_clf_node/depth_synced
+  depth_synced: /zedm/zed_node/depth/depth_registered/compressed ##/zion/env_clf_node/depth_synced
 
 
 recording:
