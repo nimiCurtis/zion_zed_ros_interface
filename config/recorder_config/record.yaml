@@ -1,4 +1,4 @@
-#
+
 hydra:
   run:
     dir: ${path:}/${recording.bag_folder}/saved_configs/recorder_configs/
@@ -8,14 +8,13 @@ topics:
   tf: /tf
   imu: /zedm/zed_node/imu/data
   rgb: /zedm/zed_node/rgb/image_rect_color/compressed ##/zedm/zed_node/rgb/image_rect_color
-  depth: /zedm/zed_node/depth/depth_registered
+  depth:  /zedm/zed_node/depth/depth_registered/compressed
   confidence: /zedm/zed_node/confidence/confidence_map
   disparity: /zedm/zed_node/disparity/disparity_image
   pcl: /zedm/zed_node/point_cloud/cloud_registered
   pose: /zedm/zed_node/pose_with_covariance
   env_clf: /zion/env_clf_node/clf_result
   depth_synced: /zedm/zed_node/depth/depth_registered/compressed ##/zion/env_clf_node/depth_synced
-
 
 recording:
   script: record_zed.sh
