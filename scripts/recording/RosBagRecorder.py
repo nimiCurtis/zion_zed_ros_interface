@@ -1,12 +1,5 @@
 #!/usr/bin/env python3
 
-"""
--TODO: 
-- better config file managment
-"""
-
-
-
 # Libraries
 import hydra
 from hydra.utils import get_original_cwd, to_absolute_path
@@ -26,9 +19,8 @@ class RosBagRecord:
         
         """    
     def __init__(self, topics_list, record_script_path, record_folder):
-        """_summary_
-        Args:
-            cfg (DictConfig): configuration dictionary for recording process
+        """
+
         """        
         self.record_folder = record_folder      # use folder to store the bag from path in config        
         self.command = "source " + record_script_path +" "+" ".join(topics_list) # build rosbag command depend on the topic list        
@@ -48,7 +40,8 @@ class RosBagRecord:
         """This function terminate the ros node starting with the given argument
             Args:
                 s (string): first word of the target node to kill
-            """        
+            """
+                    
         # Adapted from http://answers.ros.org/question/10714/start-and-stop-rosbag-within-a-python-script/
         # get topics to kill from 'rosnode list' using shell command.
         list_cmd = subprocess.Popen("rosnode list", shell=True, stdout=subprocess.PIPE)
@@ -63,21 +56,17 @@ class RosBagRecord:
     def stop_recording_handler(self,record_runing=True):
         """This function execute the terminate function when ros shutdown
             """        
-        # kill node
         
+        # kill node
         if record_runing:
             self.terminate_ros_node("/record")
-            rospy.loginfo("Saving bag..")
+            rospy.loginfo("Saving bag to " + self.record_folder)
 
         else:
             rospy.loginfo("Record didn't run. Not saving bag and camera params")
-        
 
+# def main():
+#     pass
 
-def main():
-    pass
-
-
-if __name__ == '__main__':
-
-    main()
+# if __name__ == '__main__':
+#     main()
