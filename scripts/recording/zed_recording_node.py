@@ -17,10 +17,7 @@
 # Standard library imports
 import os
 import yaml
-
-# Related third party imports
-import hydra
-from omegaconf import OmegaConf
+import datetime
 
 # ROS application/library specific imports
 import rospy
@@ -33,47 +30,68 @@ from RosBagRecorder import RosBagRecord
 from rospy_message_converter import message_converter
 
 PATH = os.path.dirname(__file__)
-OmegaConf.register_new_resolver("path", lambda : PATH)
 
 class ZedRecordManager(object):
+    """
+    Manages the recording of ZED camera data in ROS, including parameters and camera information.
 
-    def __init__(self,cfg) -> None:
+    This class interfaces with a ROS bag recorder to manage the recording of camera data and associated 
+    ROS topics. It also handles service requests for starting and stopping the recording.
+
+    Attributes:
+        rosbag_recorder (RosBagRecord): Object to manage ROS bag recording.
+        ctrl_c (bool): Flag to indicate if the script is exiting.
+        _is_recording (bool): Flag to track if the recording is currently active.
+        _ros_start_time (rospy.Time): The start time of the recording.
+        _ros_current_time (rospy.Time): The current ROS time.
+    """
+
+    def __init__(self) -> None:
         """
         Initializes the ZedRecordManager with the given configuration.
-
-        Args:
-            cfg: Configuration object containing recording settings and topic information.
         """
         
-        rospy.loginfo("*** Parameters ***")
-        rospy.loginfo(OmegaConf.to_yaml(cfg.recording, resolve=True))
-        
-        topics_list_keys = cfg.recording.topics_to_rec
-        topics = cfg.topics
+        # Initialize parameters
+        params = self._load_parameters()
+
+        # Store the topics to a list 
+        topics_list_keys = params["topics_to_rec"]
+        topics = params["topics"]
         topics_list = [topics.get(k) for k in topics_list_keys]
 
-        self.record_script = os.path.join(PATH, cfg.recording.script)           # use bash script from path in config
+        self.record_script = os.path.join(PATH, params["script"])           # use bash script from path in config
         
-        bag_folder = cfg.recording.bag_folder
-        self.record_folder = os.path.join(PATH, bag_folder)       # use folder to store the bag from path in config
-
-        self.recorded_cam_params_folder = os.path.join(self.record_folder, 'configs')        
-        if not os.path.exists(self.recorded_cam_params_folder):
-            os.makedirs(self.recorded_cam_params_folder)
-
-        # self.recorded_cam_params_folder = os.path.join(PATH, cfg.recording.camera_params_folder)
+        bag_folder = os.path.join(PATH, params["bag_folder"])
+        prefix = params["prefix"]
+        # Generate the folder name with prefix and current date-time
+        current_time_str = datetime.datetime.now().strftime("%Y-%m-%d_%H-%M-%S")
+        folder_name = f"{prefix}_{current_time_str}"
         
+        # Complete path for the record folder
+        self.record_folder = os.path.join(bag_folder, folder_name)
+
+        # Create the folder if it doesn't exist
+        if not os.path.exists(self.record_folder):
+            os.makedirs(self.record_folder, exist_ok=True)       
+
+        self.recorded_configs_folder = os.path.join(self.record_folder, "configs")        
+        if not os.path.exists(self.recorded_configs_folder):
+            os.makedirs(self.recorded_configs_folder)
+
+        # Initialize a RosBagRecord instance
         self.rosbag_recorder = RosBagRecord(topics_list=topics_list,
                                         record_script_path=self.record_script,
-                                        record_folder=self.record_folder)
+                                        record_folder=self.record_folder,
+                                        record_node_name="record")
 
+
+        # Initialize additional flags and attributes 
         self.ctrl_c = False
         rospy.on_shutdown(self.shutdownhook)
 
         self._is_recording = False
         self._ros_start_time = rospy.Time.now()
         self._ros_current_time = rospy.Time.now()
-        rospy.loginfo("**************")
 
     def spin(self):
         """
@@ -93,7 +111,8 @@ class ZedRecordManager(object):
                 rospy.loginfo("{} is runnning properly.".format(zed_node))
                 self._save_zed_params()
                 self._save_camera_info()
-                self.recording_service = rospy.Service('~record',SetBool,self._record_callback)
+                self._save_recording_params()
+                self.recording_service = rospy.Service("~record",SetBool,self._record_callback)
 
                 while not rospy.is_shutdown():
                     if self._is_recording:
@@ -105,7 +124,7 @@ class ZedRecordManager(object):
         
         except rospy.ROSException as e:
             rospy.logwarn("ZED node didn't start")
-            self.rosbag_recorder.stop_recording_handler(record_runing=self._is_recording)
+            self.rosbag_recorder.stop_recording_handler(record_running=self._is_recording)
 
     def shutdownhook(self):
         """
@@ -113,11 +132,31 @@ class ZedRecordManager(object):
         """
         
         self.ctrl_c = True
-        self.rosbag_recorder.stop_recording_handler(record_runing=self._is_recording)
+        self.rosbag_recorder.stop_recording_handler(record_running=self._is_recording)
 
         # Cleanup actions before exiting
         rospy.logwarn("Shutting down " + rospy.get_name())
 
+    def _load_parameters(self):
+        """
+        Loads and returns various recording-related parameters from the ROS Parameter Server.
+
+        Returns:
+            params (dict): A dictionary containing the loaded parameters.
+        """
+        
+        node_name = rospy.get_name()
+        
+        params = {}
+        params["topics"] = rosparam.get_param(node_name+"/topics")
+        params["topics_to_rec"] = rosparam.get_param(node_name+"/recording/topics_to_rec")
+        params["bag_folder"] = rosparam.get_param(node_name+"/recording/bag_folder")
+        params["script"] = rosparam.get_param(node_name+"/recording/script")
+        params["prefix"] = rosparam.get_param(node_name+"/recording/prefix")
+
+        return params
+        
+        
     def _record_callback(self,request:SetBoolRequest):
         """
         Callback function for the recording service.
@@ -139,7 +178,7 @@ class ZedRecordManager(object):
 
         elif not request.data:
             if self._is_recording:
-                self.rosbag_recorder.stop_recording_handler(record_runing=self._is_recording)
+                self.rosbag_recorder.stop_recording_handler(record_running=self._is_recording)
                 self._is_recording = False
                 self._ros_current_time = rospy.Time.now()
                 dt = (self._ros_current_time - self._ros_start_time).to_sec()
@@ -162,9 +201,9 @@ class ZedRecordManager(object):
         """
         
         rospy.loginfo("Saving camera params")
-        if not os.path.exists(self.recorded_cam_params_folder):
-            os.mkdir(self.recorded_cam_params_folder)
-        rosparam.dump_params(self.recorded_cam_params_folder+"/zedm.yaml",param="zedm")
+        if not os.path.exists(self.recorded_configs_folder):
+            os.mkdir(self.recorded_configs_folder)
+        rosparam.dump_params(self.recorded_configs_folder+"/zedm.yaml",param="/zedm")
 
     def _save_camera_info(self):
         """
@@ -172,8 +211,8 @@ class ZedRecordManager(object):
         """
         
         rospy.loginfo("Saving camera info and static TFs")
-        if not os.path.exists(self.recorded_cam_params_folder):
-            os.mkdir(self.recorded_cam_params_folder)
+        if not os.path.exists(self.recorded_configs_folder):
+            os.mkdir(self.recorded_configs_folder)
 
         camera_info_left = rospy.wait_for_message("/zedm/zed_node/left/camera_info",CameraInfo,timeout=5)
         camera_info_right = rospy.wait_for_message("/zedm/zed_node/right/camera_info",CameraInfo,timeout=5)
@@ -191,20 +230,29 @@ class ZedRecordManager(object):
         info_dic["tf_static_base_to_optical"] = message_converter.convert_ros_message_to_dictionary(tf_static_base_to_optical)
         info_dic["left_camera_info"] = message_converter.convert_ros_message_to_dictionary(camera_info_left)
         info_dic["right_camera_info"] = message_converter.convert_ros_message_to_dictionary(camera_info_right)
-        file_path = os.path.join(self.recorded_cam_params_folder,"camera_info.yaml")
+        file_path = os.path.join(self.recorded_configs_folder,"camera_info.yaml")
         with open(file_path, 'w') as file:
             yaml.dump(info_dic, file)
+    
+    def _save_recording_params(self):
+        """
+        Saves recording parameters to a file.
+        """
+        
+        rospy.loginfo("Saving recording parameters")
+        if not os.path.exists(self.recorded_configs_folder):
+            os.mkdir(self.recorded_configs_folder)
+        rosparam.dump_params(self.recorded_configs_folder+"/record.yaml",param=rospy.get_name())
 
-# Use hydra for configuration managing
-@hydra.main( version_base=None ,config_path="../../config/recorder_config", config_name = "record")
-def main(cfg):
+
+def main():
 
     # Main function implementation
 
     try:
-        rospy.init_node('zed_recording_node')                # Init node
-        rospy.loginfo('********** Starting node {} **********'.format(rospy.get_name()))
-        zed_recorder_manager = ZedRecordManager(cfg)
+        rospy.init_node("zed_recording_node")                # Init node
+        rospy.loginfo("********** Starting node {} **********".format(rospy.get_name()))
+        zed_recorder_manager = ZedRecordManager()
         zed_recorder_manager.spin()
 
     except rospy.ROSInterruptException:

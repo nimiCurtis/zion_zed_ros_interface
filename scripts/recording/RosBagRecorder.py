@@ -33,7 +33,7 @@ class RosBagRecord:
         command (str): The command to be executed for recording the topics.
     """
 
-    def __init__(self, topics_list, record_script_path, record_folder):
+    def __init__(self, topics_list, record_script_path, record_folder, record_node_name="record"):
         """
         Initializes the RosBagRecord object with parameters for recording.
 
@@ -43,7 +43,8 @@ class RosBagRecord:
             record_folder (str): The directory where the recorded bag file will be stored.
         """
         self.record_folder = record_folder
-        self.command = "source " + record_script_path + " " + " ".join(topics_list)  # Build the rosbag command based on the topics list
+        self.record_node_name = record_node_name
+        self.command = "source " + record_script_path + " " + " ".join(topics_list) + " __name:=" + self.record_node_name # Build the rosbag command based on the topics list
 
     def start(self):
         """
@@ -82,9 +83,11 @@ class RosBagRecord:
         Args:
             record_running (bool): A flag to indicate whether recording is currently running. Defaults to True.
         """
+        
         # Terminate recording if it's running
+        ns = rospy.get_namespace()
         if record_running:
-            self.terminate_ros_node("/record")
+            self.terminate_ros_node(ns+self.record_node_name)
             rospy.loginfo("Saving bag to " + self.record_folder)
         else:
-            rospy.loginfo("Record didn't run. Not saving bag and camera params")
+            rospy.loginfo("Record didn't run. Nothing to save.")

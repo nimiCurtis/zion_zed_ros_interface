@@ -1,8 +1,4 @@
 
-hydra:
-  run:
-    dir: ${path:}/${recording.bag_folder}/configs/
-
 topics:
   tf_static: /tf_static
   tf: /tf
@@ -11,18 +7,19 @@ topics:
   depth:  /zedm/zed_node/depth/depth_registered/compressed
   pcl: /zedm/zed_node/point_cloud/cloud_registered
   pose: /zedm/zed_node/pose_with_covariance
+  odom: /zedm/zed_node/odom
 
 recording:
   script: record_zed.sh
   prefix: bag_batch  
   compression: true
-  bag_folder: ../../bag/${recording.prefix}_${now:%Y-%m-%d}_${now:%H-%M-%S}
-  topics_to_rec: 
+  bag_folder: ../../bag # Relative path to the parent bag folder 
+  topics_to_rec:
     # - tf
     # - tf_static
     - rgb
     - depth
-    # - odom
+    - odom
     # - imu
 
 

@@ -1,17 +1,17 @@
-<!-- -*- xml -*- -->
-<!--
-  - launch the zed_operate launch file
-  - future developing - change arguments / params depends on config
-  -->
-
 <launch>
 
-  <!-- <arg name="robot" default="zion" /> -->
-
-  <include file="$(find zion_zed_ros_interface)/launch/zed_operate.launch" />
+  <arg name="robot" default="zion" />
+  <arg name="prefix" default="" />
+  <!-- <arg name="topics_to_rec" default="None" /> -->
 
   <group ns="$(arg robot)">
-        <node name="recording_node" pkg="zion_zed_ros_interface" type="zed_recording.py" output="screen">
+        <node name="zed_recording_node" pkg="zion_zed_ros_interface" type="zed_recording_node.py" output="screen">
+            <rosparam file="$(find zion_zed_ros_interface)/params/record.yaml" command="load"/>
+
+            <!-- Conditionally override parameter if the argument is provided -->
+
+            <!-- <param name="recording/prefix" value="$(arg prefix)"/> -->
+            <param if="$(eval arg('prefix') != '')" name="recording/prefix" value="$(arg prefix)"/>
         </node>
   </group>
 
