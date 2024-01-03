@@ -1,4 +1,6 @@
 bag/*
 config/saved_configs/*
 .vscode
-*/__pycache__
+__pycache__/
+*.pyc
+
