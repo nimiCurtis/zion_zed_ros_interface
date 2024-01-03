@@ -5,5 +5,14 @@
   -->
 
 <launch>
+
+  <!-- <arg name="robot" default="zion" /> -->
+
   <include file="$(find zion_zed_ros_interface)/launch/zed_operate.launch" />
+
+  <group ns="$(arg robot)">
+        <node name="recording_node" pkg="zion_zed_ros_interface" type="zed_recording.py" output="screen">
+        </node>
+  </group>
+
 </launch>

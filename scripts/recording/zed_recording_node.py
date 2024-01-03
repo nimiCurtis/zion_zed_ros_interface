@@ -12,7 +12,7 @@ from omegaconf import OmegaConf
 import rospy
 import rosnode
 import rosparam
-from zion_msgs.srv import RecordBag, RecordBagRequest, RecordBagResponse
+from std_srvs.srv import SetBool, SetBoolRequest, SetBoolResponse
 from sensor_msgs.msg import CameraInfo
 from tf2_msgs.msg import TFMessage
 from RosBagRecorder import RosBagRecord
@@ -25,14 +25,23 @@ class ZedRecordManager(object):
 
     def __init__(self,cfg) -> None:
         
-        topics_list_keys = cfg.recording.topics_to_rec
+        rospy.loginfo("*** Parameters ***")
+        rospy.loginfo(OmegaConf.to_yaml(cfg.recording, resolve=True))
         
+        topics_list_keys = cfg.recording.topics_to_rec
         topics = cfg.topics
         topics_list = [topics.get(k) for k in topics_list_keys]
 
-        self.record_script = os.path.join(PATH,cfg.recording.script)           # use bash script from path in config
-        self.record_folder = os.path.join(PATH,cfg.recording.bag_folder)       # use folder to store the bag from path in config
-        self.recorded_cam_params_folder =os.path.join(PATH,cfg.recording.camera_params_folder)
+        self.record_script = os.path.join(PATH, cfg.recording.script)           # use bash script from path in config
+        
+        bag_folder = cfg.recording.bag_folder
+        self.record_folder = os.path.join(PATH, bag_folder)       # use folder to store the bag from path in config
+
+        self.recorded_cam_params_folder = os.path.join(self.record_folder, 'configs')        
+        if not os.path.exists(self.recorded_cam_params_folder):
+            os.makedirs(self.recorded_cam_params_folder)
+
+        # self.recorded_cam_params_folder = os.path.join(PATH, cfg.recording.camera_params_folder)
         
         self.rosbag_record = RosBagRecord(topics_list=topics_list,
                                         record_script_path=self.record_script,
@@ -44,63 +53,56 @@ class ZedRecordManager(object):
         self._is_recording = False
         self._ros_start_time = rospy.Time.now()
         self._ros_current_time = rospy.Time.now()
+        rospy.loginfo("**************")
 
-    def record(self):
+    def spin(self):
 
         zed_node = "/zedm/zed_node"
         # Use rosnode to get the list of running nodes
         running_nodes = rosnode.get_node_names()
+        
         try:
-            
-            r = rospy.Rate(0.5)
             while (not (zed_node in running_nodes)) and not(self.ctrl_c) :
-                rospy.loginfo("{} is not runnning. Please check camera".format(zed_node))
+                rospy.loginfo_throttle(2,"{} is not runnning. Please check camera".format(zed_node))
                 running_nodes = rosnode.get_node_names()
-                r.sleep()
 
             if (not self.ctrl_c and (zed_node in running_nodes)):
                 rospy.loginfo("{} is runnning properly.".format(zed_node))
                 self._save_zed_params()
                 self._save_camera_info()
-                self.record_service = rospy.Service('/zion/record_node/record',RecordBag,self._record_callback)
+                self.recording_service = rospy.Service('~record',SetBool,self._record_callback)
 
-                feedback_rate = 10. # secs
-                r = rospy.Rate(1/feedback_rate)  # Rate to print the duration every 1 second
-                while not self.ctrl_c:
+                while not rospy.is_shutdown():
                     if self._is_recording:
                         self._ros_current_time = rospy.Time.now()
                         dt = (self._ros_current_time - self._ros_start_time).to_sec()
-                        rospy.loginfo("Recording for {:.2f} [secs]".format(dt))
-                        r.sleep()
+                        rospy.loginfo_throttle(10,"Recording for {:.2f} [secs]".format(dt))
 
             rospy.spin()
-
+        
         except rospy.ROSException as e:
             rospy.logwarn("ZED node didn't start")
             self.rosbag_record.stop_recording_handler(record_runing=self._is_recording)
 
-
     def shutdownhook(self):
 
         self.ctrl_c = True
-        
-        if self._is_recording:
-            self.rosbag_record.stop_recording_handler(record_runing=self._is_recording)
+        self.rosbag_record.stop_recording_handler(record_runing=self._is_recording)
 
         # Cleanup actions before exiting
-        rospy.signal_shutdown("Shutting down " + rospy.get_name())
+        rospy.logwarn("Shutting down " + rospy.get_name())
 
-    def _record_callback(self,request:RecordBagRequest):
-        
-        if request.record:
+    def _record_callback(self,request:SetBoolRequest):
+
+        if request.data:
             if not self._is_recording:
                 self.rosbag_record.start()
                 self._is_recording = True
                 self._ros_start_time = rospy.Time.now()
             else:
-                return RecordBagResponse(success=False, message="Already recording.")
+                return SetBoolResponse(success=False, message="Already recording.")
 
-        elif not request.record:
+        elif not request.data:
             if self._is_recording:
                 self.rosbag_record.stop_recording_handler(record_runing=self._is_recording)
                 self._is_recording = False
@@ -108,16 +110,16 @@ class ZedRecordManager(object):
                 dt = (self._ros_current_time - self._ros_start_time).to_sec()
                 rospy.loginfo("Recording stopped after {:.2f} seconds.".format(dt))
             else:
-                return RecordBagResponse(success=False, message="Not recording.")
+                return SetBoolResponse(success=False, message="Already not recording.")
 
-        if request.record:
+        if request.data:
             response_message = "Received recording command, start recording."
         else:
             self._ros_current_time = rospy.Time.now()
             dt = (self._ros_current_time - self._ros_start_time).to_sec()
             response_message = "Received stop command, recording stopped after {:.2f} seconds.".format(dt)
 
-        return RecordBagResponse(success=True, message=response_message)
+        return SetBoolResponse(success=True, message=response_message)
 
     def _save_zed_params(self):
         # dump camera params
@@ -157,11 +159,10 @@ def main(cfg):
 
     # Go to class functions that do all the heavy lifting. Do error checking.
     try:
-        rospy.init_node('zion_recording_node')                # Init node
+        rospy.init_node('zed_recording_node')                # Init node
         rospy.loginfo('********** Starting node {} **********'.format(rospy.get_name()))
-
         zed_recorder_manager = ZedRecordManager(cfg)
-        zed_recorder_manager.record()
+        zed_recorder_manager.spin()
 
     except rospy.ROSInterruptException:
         pass

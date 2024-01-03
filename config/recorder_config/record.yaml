@@ -1,7 +1,7 @@
 
 hydra:
   run:
-    dir: ${path:}/${recording.bag_folder}/saved_configs/recorder_configs/
+    dir: ${path:}/${recording.bag_folder}/configs/
 
 topics:
   tf_static: /tf_static
@@ -14,10 +14,9 @@ topics:
 
 recording:
   script: record_zed.sh
-  prefix: null # optional
+  prefix: bag_batch  
   compression: true
-  bag_folder: ../../bag/bag_batch_${now:%Y-%m-%d}_${now:%H-%M-%S}
-  camera_params_folder: ${recording.bag_folder}/saved_configs/recorder_configs/camera_params
+  bag_folder: ../../bag/${recording.prefix}_${now:%Y-%m-%d}_${now:%H-%M-%S}
   topics_to_rec: 
     # - tf
     # - tf_static
