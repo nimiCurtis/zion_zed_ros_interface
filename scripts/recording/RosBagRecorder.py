@@ -1,72 +1,90 @@
 #!/usr/bin/env python3
 
-# Libraries
-import hydra
-from hydra.utils import get_original_cwd, to_absolute_path
+# Copyright 2024 Nimrod Curtis
+#
+# Licensed under the Apache License, Version 2.0 (the "License");
+# you may not use this file except in compliance with the License.
+# You may obtain a copy of the License at
+#
+#   http://www.apache.org/licenses/LICENSE-2.0
+# 
+# Unless required by applicable law or agreed to in writing, software
+# distributed under the License is distributed on an "AS IS" BASIS,
+# WITHOUT WARRANTIES OR CONDITIONS OF ANY KIND, either express or implied.
+# See the License for the specific language governing permissions and
+# limitations under the License.
 
-from hydra import compose, initialize
-from omegaconf import OmegaConf
-
-from omegaconf import DictConfig
-import rospy
-import rosparam
+# Standard library imports
 import subprocess
 import os
 
+# ROS application/library specific imports
+import rospy
 
 class RosBagRecord:
-    """TBD...
-        
-        """    
+    """
+    A class for managing the recording of ROS topics into a bag file.
+
+    This class provides methods to start and stop the recording of specified ROS topics.
+    It also includes functionality to terminate specific ROS nodes.
+
+    Attributes:
+        record_folder (str): The directory where the recorded bag file will be stored.
+        command (str): The command to be executed for recording the topics.
+    """
+
     def __init__(self, topics_list, record_script_path, record_folder):
         """
+        Initializes the RosBagRecord object with parameters for recording.
 
-        """        
-        self.record_folder = record_folder      # use folder to store the bag from path in config        
-        self.command = "source " + record_script_path +" "+" ".join(topics_list) # build rosbag command depend on the topic list        
+        Args:
+            topics_list (list of str): A list of ROS topics to be recorded.
+            record_script_path (str): The file path to a script that initiates the recording process.
+            record_folder (str): The directory where the recorded bag file will be stored.
+        """
+        self.record_folder = record_folder
+        self.command = "source " + record_script_path + " " + " ".join(topics_list)  # Build the rosbag command based on the topics list
 
     def start(self):
-        
+        """
+        Starts the recording of ROS topics into a bag file.
+
+        This method runs the recording command in a separate process within the specified record folder.
+        """
+        # Start the recording in a subprocess
         self.p = subprocess.Popen(self.command, 
-                                    stdin=subprocess.PIPE,
-                                    cwd=self.record_folder,
-                                    shell=True,
-                                    executable='/bin/bash') 
-
-        # effectively go into an infinite loop until it receives a shutdown signal
-
+                                  stdin=subprocess.PIPE,
+                                  cwd=self.record_folder,
+                                  shell=True,
+                                  executable='/bin/bash')
 
     def terminate_ros_node(self, s):
-        """This function terminate the ros node starting with the given argument
-            Args:
-                s (string): first word of the target node to kill
-            """
-                    
-        # Adapted from http://answers.ros.org/question/10714/start-and-stop-rosbag-within-a-python-script/
-        # get topics to kill from 'rosnode list' using shell command.
+        """
+        Terminates ROS nodes that start with a specified string.
+
+        Args:
+            s (str): The prefix of the node names to be terminated.
+        """
+        # List all ROS nodes and terminate the specified ones
         list_cmd = subprocess.Popen("rosnode list", shell=True, stdout=subprocess.PIPE)
         list_output = list_cmd.stdout.read()
         retcode = list_cmd.wait()
         assert retcode == 0, "List command returned %d" % retcode
-        for str in list_output.split(b"\n"):            # iterate topics using split(b"\n") | 'b' for byte type
-            str_decode = str.decode('utf8')             # decode to string
-            if (str_decode.startswith(s)):              # if it starts with string which 's' stored >> kill it
-                os.system("rosnode kill " + str_decode) # kill node
+        for str in list_output.split(b"\n"):
+            str_decode = str.decode('utf8')
+            if str_decode.startswith(s):
+                os.system("rosnode kill " + str_decode)  # Kill the node
 
-    def stop_recording_handler(self,record_runing=True):
-        """This function execute the terminate function when ros shutdown
-            """        
-        
-        # kill node
-        if record_runing:
+    def stop_recording_handler(self, record_running=True):
+        """
+        Stops the recording process and handles the saving of the recorded data.
+
+        Args:
+            record_running (bool): A flag to indicate whether recording is currently running. Defaults to True.
+        """
+        # Terminate recording if it's running
+        if record_running:
             self.terminate_ros_node("/record")
             rospy.loginfo("Saving bag to " + self.record_folder)
-
         else:
             rospy.loginfo("Record didn't run. Not saving bag and camera params")
-
-# def main():
-#     pass
-
-# if __name__ == '__main__':
-#     main()

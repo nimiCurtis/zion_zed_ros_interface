@@ -1,5 +1,19 @@
 #!/usr/bin/env python3
 
+# Copyright 2024 Nimrod Curtis
+#
+# Licensed under the Apache License, Version 2.0 (the "License");
+# you may not use this file except in compliance with the License.
+# You may obtain a copy of the License at
+#
+#   http://www.apache.org/licenses/LICENSE-2.0
+# 
+# Unless required by applicable law or agreed to in writing, software
+# distributed under the License is distributed on an "AS IS" BASIS,
+# WITHOUT WARRANTIES OR CONDITIONS OF ANY KIND, either express or implied.
+# See the License for the specific language governing permissions and
+# limitations under the License.
+
 # Standard library imports
 import os
 import yaml
@@ -24,6 +38,12 @@ OmegaConf.register_new_resolver("path", lambda : PATH)
 class ZedRecordManager(object):
 
     def __init__(self,cfg) -> None:
+        """
+        Initializes the ZedRecordManager with the given configuration.
+
+        Args:
+            cfg: Configuration object containing recording settings and topic information.
+        """
         
         rospy.loginfo("*** Parameters ***")
         rospy.loginfo(OmegaConf.to_yaml(cfg.recording, resolve=True))
@@ -43,7 +63,7 @@ class ZedRecordManager(object):
 
         # self.recorded_cam_params_folder = os.path.join(PATH, cfg.recording.camera_params_folder)
         
-        self.rosbag_record = RosBagRecord(topics_list=topics_list,
+        self.rosbag_recorder = RosBagRecord(topics_list=topics_list,
                                         record_script_path=self.record_script,
                                         record_folder=self.record_folder)
 
@@ -56,7 +76,10 @@ class ZedRecordManager(object):
         rospy.loginfo("**************")
 
     def spin(self):
-
+        """
+        Main loop of the node. Checks for ZED node status and handles recording.
+        """
+        
         zed_node = "/zedm/zed_node"
         # Use rosnode to get the list of running nodes
         running_nodes = rosnode.get_node_names()
@@ -82,21 +105,33 @@ class ZedRecordManager(object):
         
         except rospy.ROSException as e:
             rospy.logwarn("ZED node didn't start")
-            self.rosbag_record.stop_recording_handler(record_runing=self._is_recording)
+            self.rosbag_recorder.stop_recording_handler(record_runing=self._is_recording)
 
     def shutdownhook(self):
-
+        """
+        Function to be called on shutdown. Stops recording and performs cleanup.
+        """
+        
         self.ctrl_c = True
-        self.rosbag_record.stop_recording_handler(record_runing=self._is_recording)
+        self.rosbag_recorder.stop_recording_handler(record_runing=self._is_recording)
 
         # Cleanup actions before exiting
         rospy.logwarn("Shutting down " + rospy.get_name())
 
     def _record_callback(self,request:SetBoolRequest):
+        """
+        Callback function for the recording service.
 
+        Args:
+            request (SetBoolRequest): The service request containing the command to start or stop recording.
+
+        Returns:
+            SetBoolResponse: The response indicating success or failure and an accompanying message.
+        """
+        
         if request.data:
             if not self._is_recording:
-                self.rosbag_record.start()
+                self.rosbag_recorder.start()
                 self._is_recording = True
                 self._ros_start_time = rospy.Time.now()
             else:
@@ -104,7 +139,7 @@ class ZedRecordManager(object):
 
         elif not request.data:
             if self._is_recording:
-                self.rosbag_record.stop_recording_handler(record_runing=self._is_recording)
+                self.rosbag_recorder.stop_recording_handler(record_runing=self._is_recording)
                 self._is_recording = False
                 self._ros_current_time = rospy.Time.now()
                 dt = (self._ros_current_time - self._ros_start_time).to_sec()
@@ -122,13 +157,20 @@ class ZedRecordManager(object):
         return SetBoolResponse(success=True, message=response_message)
 
     def _save_zed_params(self):
-        # dump camera params
+        """
+        Saves the ZED camera parameters to a file.
+        """
+        
         rospy.loginfo("Saving camera params")
         if not os.path.exists(self.recorded_cam_params_folder):
             os.mkdir(self.recorded_cam_params_folder)
         rosparam.dump_params(self.recorded_cam_params_folder+"/zedm.yaml",param="zedm")
 
     def _save_camera_info(self):
+        """
+        Saves camera info and static TFs to a file.
+        """
+        
         rospy.loginfo("Saving camera info and static TFs")
         if not os.path.exists(self.recorded_cam_params_folder):
             os.mkdir(self.recorded_cam_params_folder)
@@ -157,7 +199,8 @@ class ZedRecordManager(object):
 @hydra.main( version_base=None ,config_path="../../config/recorder_config", config_name = "record")
 def main(cfg):
 
-    # Go to class functions that do all the heavy lifting. Do error checking.
+    # Main function implementation
+
     try:
         rospy.init_node('zed_recording_node')                # Init node
         rospy.loginfo('********** Starting node {} **********'.format(rospy.get_name()))
