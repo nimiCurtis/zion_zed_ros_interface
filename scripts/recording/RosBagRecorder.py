@@ -90,4 +90,4 @@ class RosBagRecord:
             self.terminate_ros_node(ns+self.record_node_name)
             rospy.loginfo("Saving bag to " + self.record_folder)
         else:
-            rospy.loginfo("Record didn't run. Nothing to save.")
+            rospy.loginfo("Record didn't run. No recording to terminate.")

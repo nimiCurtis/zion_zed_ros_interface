@@ -18,6 +18,7 @@
 import os
 import yaml
 import datetime
+import json
 
 # ROS application/library specific imports
 import rospy
@@ -44,6 +45,7 @@ class ZedRecordManager(object):
         _is_recording (bool): Flag to track if the recording is currently active.
         _ros_start_time (rospy.Time): The start time of the recording.
         _ros_current_time (rospy.Time): The current ROS time.
+        _metadata (dict): Dictionary which hold a meta information on the folder.
     """
 
     def __init__(self) -> None:
@@ -64,8 +66,8 @@ class ZedRecordManager(object):
         bag_folder = os.path.join(PATH, params["bag_folder"])
         prefix = params["prefix"]
         # Generate the folder name with prefix and current date-time
-        current_time_str = datetime.datetime.now().strftime("%Y-%m-%d_%H-%M-%S")
-        folder_name = f"{prefix}_{current_time_str}"
+        current_time = datetime.datetime.now().strftime("%Y-%m-%d-%H-%M-%S")
+        folder_name = f"{prefix}_{current_time}"
         
         # Complete path for the record folder
         self.record_folder = os.path.join(bag_folder, folder_name)
@@ -92,6 +94,13 @@ class ZedRecordManager(object):
         self._is_recording = False
         self._ros_start_time = rospy.Time.now()
         self._ros_current_time = rospy.Time.now()
+        self._record_counter = 0
+        
+        self._metadata = {}
+        self._metadata["time"] = {}
+        self._metadata["time"]["start"] = current_time
+        self._metadata["processed_bags"] = []
+        self._metadata["compressed_bags"] = []
 
     def spin(self):
         """
@@ -134,6 +143,9 @@ class ZedRecordManager(object):
         self.ctrl_c = True
         self.rosbag_recorder.stop_recording_handler(record_running=self._is_recording)
 
+        # Save metadta 
+        self._save_metadata()
+        
         # Cleanup actions before exiting
         rospy.logwarn("Shutting down " + rospy.get_name())
 
@@ -171,6 +183,7 @@ class ZedRecordManager(object):
         if request.data:
             if not self._is_recording:
                 self.rosbag_recorder.start()
+                self._record_counter+=1
                 self._is_recording = True
                 self._ros_start_time = rospy.Time.now()
             else:
@@ -244,6 +257,21 @@ class ZedRecordManager(object):
             os.mkdir(self.recorded_configs_folder)
         rosparam.dump_params(self.recorded_configs_folder+"/record.yaml",param=rospy.get_name())
 
+    def _save_metadata(self):
+        """
+        Saves metadata with some relevant info
+        """
+        rospy.loginfo("Saving metadata")
+
+        current_time = datetime.datetime.now().strftime("%Y-%m-%d-%H-%M-%S")
+        self._metadata["time"]["end"] = current_time
+        self._metadata["bags_number"] = self._record_counter
+        
+        file_path = os.path.join(self.record_folder,"metadata.json")
+        
+        # Writing the dictionary to a JSON file
+        with open(file_path, 'w') as json_file:
+            json.dump(self._metadata, json_file, indent=4)
 
 def main():
 
