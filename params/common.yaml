@@ -42,7 +42,7 @@ general:
 depth:
     depth_mode:                 'NEURAL'                         # 'NONE', 'PERFORMANCE', 'QUALITY', 'ULTRA', 'NEURAL'
     depth_stabilization:        1                               # [0-100] - 0: Disabled
-    openni_depth_mode:          true                           # 'false': 32bit float meter units, 'true': 16bit uchar millimeter units
+    openni_depth_mode:          True                           # 'false': 32bit float meter units, 'true': 16bit uchar millimeter units
 
 
 pos_tracking:

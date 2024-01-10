@@ -4,7 +4,8 @@ topics:
   tf: /tf
   imu: /zedm/zed_node/imu/data
   rgb: /zedm/zed_node/rgb/image_rect_color/compressed
-  depth: /zedm/zed_node/depth/depth_registered/compressed
+  # depth: /zedm/zed_node/depth/depth_registered/compressedDepth
+  depth: /zedm/zed_node/depth/depth_registered
   pcl: /zedm/zed_node/point_cloud/cloud_registered
   pose: /zedm/zed_node/pose_with_covariance
   odom: /zedm/zed_node/odom
@@ -12,13 +13,13 @@ topics:
 recording:
   script: record_zed.sh
   demonstrator: nimrod
-  prefix: bag_batch  
+  prefix: bag_batch 
   bag_folder: ../../bag # Relative path to the parent bag folder 
   topics_to_rec:
     # - tf
     # - tf_static
     - rgb
-    - depth
+    # - depth
     - odom
     # - imu
 
