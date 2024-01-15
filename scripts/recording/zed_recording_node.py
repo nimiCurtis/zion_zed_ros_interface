@@ -24,11 +24,12 @@ import json
 import rospy
 import rosnode
 import rosparam
-from std_srvs.srv import SetBool, SetBoolRequest, SetBoolResponse
+from std_srvs.srv import SetBool, SetBoolRequest, SetBoolResponse, EmptyRequest
 from sensor_msgs.msg import CameraInfo
 from tf2_msgs.msg import TFMessage
 from RosBagRecorder import RosBagRecord
 from rospy_message_converter import message_converter
+from zed_interfaces.srv import reset_odometry
 
 PATH = os.path.dirname(__file__)
 
@@ -122,6 +123,14 @@ class ZedRecordManager(object):
                 self._save_camera_info()
                 self._save_recording_params()
                 self.recording_service = rospy.Service("~record",SetBool,self._record_callback)
+                
+
+                try:
+                    rospy.wait_for_service("/zedm/zed_node/reset_odometry",timeout=2.)
+                    self.reset_odom_client = rospy.ServiceProxy("/zedm/zed_node/reset_odometry", reset_odometry)
+                except rospy.ServiceException as e:
+                    print("Service call failed: %s"%e)
+                
 
                 while not rospy.is_shutdown():
                     if self._is_recording:
@@ -182,10 +191,13 @@ class ZedRecordManager(object):
         
         if request.data:
             if not self._is_recording:
-                self.rosbag_recorder.start()
-                self._record_counter+=1
-                self._is_recording = True
-                self._ros_start_time = rospy.Time.now()
+                reset_odom = self.reset_odom_client()
+                if reset_odom.reset_done:
+                    rospy.loginfo("Odom reset succeed")
+                    self.rosbag_recorder.start()
+                    self._record_counter+=1
+                    self._is_recording = True
+                    self._ros_start_time = rospy.Time.now()
             else:
                 return SetBoolResponse(success=False, message="Already recording.")
 
