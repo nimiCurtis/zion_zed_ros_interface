@@ -3,7 +3,7 @@ topics:
   tf_static: /tf_static
   tf: /tf
   imu: /zedm/zed_node/imu/data
-  rgb: /zedm/zed_node/rgb/image_rect_color/compressed
+  rgb: /zedm/zed_node/rgb/image_rect_color #/compressed
   # depth: /zedm/zed_node/depth/depth_registered/compressedDepth
   depth: /zedm/zed_node/depth/depth_registered
   pcl: /zedm/zed_node/point_cloud/cloud_registered
@@ -19,7 +19,7 @@ recording:
     # - tf
     # - tf_static
     - rgb
-    # - depth
+    - depth
     - odom
     # - imu
 
