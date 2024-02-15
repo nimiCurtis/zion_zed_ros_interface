@@ -16,7 +16,7 @@ auto_whitebalance:              true                            # Dynamic
 whitebalance_temperature:       42                              # Dynamic - works only if `auto_whitebalance` is false
 depth_confidence:               50                              # Dynamic
 depth_texture_conf:             100                             # Dynamic
-point_cloud_freq:               15.0                            # Dynamic - frequency of the pointcloud publishing (equal or less to `grab_frame_rate` value)
+point_cloud_freq:               10.0                            # Dynamic - frequency of the pointcloud publishing (equal or less to `grab_frame_rate` value)
 
 general:
     camera_name:                zed                             # A name for the camera (can be different from camera model and node name and can be overwritten by the launch file)
@@ -38,12 +38,10 @@ general:
     #region_of_interest:        '[[0.5,0.25],[0.75,0.5],[0.5,0.75],[0.25,0.5]]' # A polygon defining the ROI where the ZED SDK perform the processing ignoring the rest. Coordinates must be normalized to '1.0' to be resolution independent.
 
 #video:
-
 depth:
     depth_mode:                 'NEURAL'                         # 'NONE', 'PERFORMANCE', 'QUALITY', 'ULTRA', 'NEURAL'
     depth_stabilization:        1                               # [0-100] - 0: Disabled
-    openni_depth_mode:          True                           # 'false': 32bit float meter units, 'true': 16bit uchar millimeter units
-
+    openni_depth_mode:          true                           # 'false': 32bit float meter units, 'true': 16bit uchar millimeter units
 
 pos_tracking:
     pos_tracking_enabled:       true                            # True to enable positional tracking from start
@@ -57,7 +55,7 @@ pos_tracking:
     area_memory_db_path:        ''                              # file loaded when the node starts to restore the "known visual features" map. 
     save_area_memory_db_on_exit: false                          # save the "known visual features" map when the node is correctly closed to the path indicated by `area_memory_db_path`
     area_memory:                true                            # Enable to detect loop closure
-    floor_alignment:            true                           # Enable to automatically calculate camera/floor offset
+    floor_alignment:            false                           # Enable to automatically calculate camera/floor offset
     initial_base_pose:          [0.0,0.0,0.0, 0.0,0.0,0.0]      # Initial position of the `base_frame` -> [X, Y, Z, R, P, Y]
     init_odom_with_first_valid_pose: true                       # Enable to initialize the odometry with the first valid pose
     path_pub_rate:              2.0                             # Camera trajectory publishing frequency

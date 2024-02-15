@@ -43,6 +43,7 @@ OF THIS SOFTWARE, EVEN IF ADVISED OF THE POSSIBILITY OF SUCH DAMAGE.
 
     <!-- Orientation respect to base frame (i.e. "base_link) -->
     <arg name="cam_roll"              default="0.0" />
+
     <arg name="cam_pitch"             default="0.0" />
     <arg name="cam_yaw"               default="0.0" />
 
