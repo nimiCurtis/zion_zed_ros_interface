@@ -9,6 +9,7 @@ topics:
   pcl: /zedm/zed_node/point_cloud/cloud_registered
   pose: /zedm/zed_node/pose_with_covariance
   odom: /zedm/zed_node/odom
+  target_object: /obj_detect_publisher_node/object
 
 recording:
   script: record_zed.sh
@@ -21,6 +22,7 @@ recording:
     - rgb
     - depth
     - odom
+    - target_object
     # - imu
 
 

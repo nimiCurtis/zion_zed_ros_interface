@@ -10,12 +10,13 @@ project(zion_zed_ros_interface)
 find_package(catkin REQUIRED COMPONENTS
   message_generation
   message_runtime
+  zion_msgs
   nav_msgs
   roscpp
   rospy
   sensor_msgs
   std_msgs
-  zion_msgs
+  zed_interfaces
   tf2_ros
   tf
 )
@@ -112,7 +113,7 @@ find_package(catkin REQUIRED COMPONENTS
 catkin_package(
 #  INCLUDE_DIRS include
 #  LIBRARIES zion_zed_ros_interface
-  CATKIN_DEPENDS nav_msgs roscpp rospy sensor_msgs std_msgs zion_msgs
+  CATKIN_DEPENDS nav_msgs roscpp rospy sensor_msgs std_msgs zion_msgs zed_interfaces
 #  DEPENDS system_lib
 )
 
@@ -123,39 +124,41 @@ catkin_package(
 ## Specify additional locations of header files
 ## Your package locations should be listed before other locations
 include_directories(
-# include
+  include
   ${catkin_INCLUDE_DIRS}
 )
 
-## Declare a C++ library
-# add_library(${PROJECT_NAME}
-#   src/${PROJECT_NAME}/zion_zed_ros_interface.cpp
+## Declare a cpp library
+# add_library(${PROJECT_NAME}_core
+#   src/PID.cpp
+# )
+# target_compile_features(${PROJECT_NAME}_core INTERFACE cxx_std_11)
+
+## Declare cpp executables
+add_executable(obj_detect_publisher_node
+  src/obj_detect_publisher_node.cpp
+  src/ObjDetectPublisher.cpp
+)
+target_compile_features(obj_detect_publisher_node INTERFACE cxx_std_11)
+
+## Add dependencies to exported targets, like ROS msgs or srvs
+# add_dependencies(${PROJECT_NAME}_core
+#   ${catkin_EXPORTED_TARGETS}
 # )
 
-## Add cmake target dependencies of the library
-## as an example, code may need to be generated before libraries
-## either from message generation or dynamic reconfigure
-# add_dependencies(${PROJECT_NAME} ${${PROJECT_NAME}_EXPORTED_TARGETS} ${catkin_EXPORTED_TARGETS})
+add_dependencies(obj_detect_publisher_node
+  ${catkin_EXPORTED_TARGETS}
+)
 
-## Declare a C++ executable
-## With catkin_make all packages are built within a single CMake context
-## The recommended prefix ensures that target names across packages don't collide
-# add_executable(${PROJECT_NAME}_node src/zion_zed_ros_interface_node.cpp)
-
-## Rename C++ executable without prefix
-## The above recommended prefix causes long target names, the following renames the
-## target back to the shorter version for ease of user use
-## e.g. "rosrun someones_pkg node" instead of "rosrun someones_pkg someones_pkg_node"
-# set_target_properties(${PROJECT_NAME}_node PROPERTIES OUTPUT_NAME node PREFIX "")
-
-## Add cmake target dependencies of the executable
-## same as for the library above
-# add_dependencies(${PROJECT_NAME}_node ${${PROJECT_NAME}_EXPORTED_TARGETS} ${catkin_EXPORTED_TARGETS})
-
-## Specify libraries to link a library or executable target against
-# target_link_libraries(${PROJECT_NAME}_node
+## Specify libraries to link executable targets against
+# target_link_libraries(${PROJECT_NAME}_core
 #   ${catkin_LIBRARIES}
 # )
+
+target_link_libraries(obj_detect_publisher_node
+  #${PROJECT_NAME}_core
+  ${catkin_LIBRARIES}
+)
 
 #############
 ## Install ##
@@ -171,11 +174,21 @@ include_directories(
 #   DESTINATION ${CATKIN_PACKAGE_BIN_DESTINATION}
 # )
 
-## Mark executables for installation
-## See http://docs.ros.org/melodic/api/catkin/html/howto/format1/building_executables.html
-# install(TARGETS ${PROJECT_NAME}_node
-#   RUNTIME DESTINATION ${CATKIN_PACKAGE_BIN_DESTINATION}
-# )
+# Mark executables and/or libraries for installation
+install(
+  TARGETS obj_detect_publisher_node #${PROJECT_NAME}_core
+  ARCHIVE DESTINATION ${CATKIN_PACKAGE_LIB_DESTINATION}
+  LIBRARY DESTINATION ${CATKIN_PACKAGE_LIB_DESTINATION}
+  RUNTIME DESTINATION ${CATKIN_PACKAGE_BIN_DESTINATION}
+)
+
+# Mark cpp header files for installation
+install(
+  DIRECTORY include/${PROJECT_NAME}/
+  DESTINATION ${CATKIN_PACKAGE_INCLUDE_DESTINATION}
+  FILES_MATCHING PATTERN "*.hpp"
+  # FILES_MATCHING PATTERN "*.h"
+)
 
 ## Mark libraries for installation
 ## See http://docs.ros.org/melodic/api/catkin/html/howto/format1/building_libraries.html
@@ -183,13 +196,6 @@ include_directories(
 #   ARCHIVE DESTINATION ${CATKIN_PACKAGE_LIB_DESTINATION}
 #   LIBRARY DESTINATION ${CATKIN_PACKAGE_LIB_DESTINATION}
 #   RUNTIME DESTINATION ${CATKIN_GLOBAL_BIN_DESTINATION}
-# )
-
-## Mark cpp header files for installation
-# install(DIRECTORY include/${PROJECT_NAME}/
-#   DESTINATION ${CATKIN_PACKAGE_INCLUDE_DESTINATION}
-#   FILES_MATCHING PATTERN "*.h"
-#   PATTERN ".svn" EXCLUDE
 # )
 
 ## Mark other files for installation (e.g. launch and bag files, etc.)

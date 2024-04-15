@@ -92,6 +92,7 @@ class ZedRecordManager(object):
         self.ctrl_c = False
         rospy.on_shutdown(self.shutdownhook)
 
+        self._target_obj_topic = topics.get("target_object",None)
         self._is_recording = False
         self._ros_start_time = rospy.Time.now()
         self._ros_current_time = rospy.Time.now()
@@ -263,12 +264,17 @@ class ZedRecordManager(object):
         """
         Saves recording parameters to a file.
         """
-        
+
         rospy.loginfo("Saving recording parameters")
         if not os.path.exists(self.recorded_configs_folder):
             os.mkdir(self.recorded_configs_folder)
         rosparam.dump_params(self.recorded_configs_folder+"/record.yaml",param=rospy.get_name())
-
+        
+        # if target detection is on -> save the detection params
+        if self._target_obj_topic is not None:
+            rosparam.dump_params(self.recorded_configs_folder+"/obj_detect_converter.yaml",
+                                    param="/"+self._target_obj_topic.split('/')[1])
+        
     def _save_metadata(self):
         """
         Saves metadata with some relevant info
