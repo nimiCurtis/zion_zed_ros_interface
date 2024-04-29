@@ -23,7 +23,9 @@ namespace object_detect {
     ObjDetectConverter::ObjDetectConverter(ros::NodeHandle& nodeHandle)
         : nodeHandle_(nodeHandle),
         instance_id_(0),
-        label_("Person")
+        label_("Person"),
+        tfListener_(tfBuffer_),
+        distance_thresh_(0.3)
     {   
         string node_name = ros::this_node::getName();
         ROS_INFO_STREAM("Starting " << node_name << "node." );
@@ -49,6 +51,11 @@ namespace object_detect {
             }
         }
 
+        // Init last_point_in_odom_ in 0,0,0
+        last_point_in_odom_.x = 0.0;
+        last_point_in_odom_.y = 0.0;
+        last_point_in_odom_.z = 0.0;
+        
         // Subscribers
         obj_detect_subscriber_ = nodeHandle_.subscribe(ObjDetSubTopic_, 1,
                                         &ObjDetectConverter::objDetectCallback, this);
@@ -72,33 +79,85 @@ namespace object_detect {
     {
         if (!nodeHandle_.getParam("topics/obj_detect_sub_topic", ObjDetSubTopic_)) return false;
         if (!nodeHandle_.getParam("topics/obj_detect_pub_topic", ObjDetPubTopic_)) return false;
+        if (!nodeHandle_.getParam("frames/input_frame", input_frame_)) return false;
 
         nodeHandle_.getParam("object/label", label_);
         nodeHandle_.getParam("object/instance_id", instance_id_);
+        nodeHandle_.getParam("object/distance_thresh", distance_thresh_);
 
         ROS_INFO_STREAM("******* Parameters *******");
         ROS_INFO_STREAM("* Topics:");
         ROS_INFO_STREAM("  * obj_detect_sub_topic: " << ObjDetSubTopic_);
         ROS_INFO_STREAM("  * obj_detect_pub_topic: " << ObjDetPubTopic_);
+        ROS_INFO_STREAM("* Frames:");
+        ROS_INFO_STREAM("  * input_frame: " << input_frame_);
+
         ROS_INFO_STREAM("* Object:");
         ROS_INFO_STREAM("  * label " << label_);
-
-        ROS_INFO_STREAM("  * Linear vel " << instance_id_);
+        ROS_INFO_STREAM("  * instance_id " << instance_id_);
+        ROS_INFO_STREAM("  * distance_thresh " << distance_thresh_);
 
         ROS_INFO_STREAM("**************************");
         return true;
     }
 
-
     void ObjDetectConverter::objDetectCallback(const zed_interfaces::ObjectsStamped& msg)
-    {   
+    {
+        // Init msg & transformStamped
         zed_interfaces::ObjectsStamped obj_stamped_msg_;
         obj_stamped_msg_.header = msg.header;
-        
+        geometry_msgs::TransformStamped transformStamped;
+
         // Pull the specific instance from the objects list 
         for(auto obj = msg.objects.begin(); obj != msg.objects.end(); obj++){
-            if((obj->label == label_) && (obj->instance_id==instance_id_)){
-                obj_stamped_msg_.objects.push_back(*obj);
+            
+            // Check valid label
+            if(obj->label == label_){
+                geometry_msgs::PointStamped camera_point;
+                geometry_msgs::PointStamped odom_point;
+
+                // Init point in camera frame
+                camera_point.header.frame_id = input_frame_; 
+                camera_point.header.stamp = ros::Time::now();
+                camera_point.point.x = obj->position[0];
+                camera_point.point.y = obj->position[1];
+                camera_point.point.z = obj->position[2];
+
+                // TODO: chack if it is necessery to lookup for a specific transform -> I think its better
+                // Transform camera point to odom frame
+                try{
+                    transformStamped = tfBuffer_.lookupTransform("odom", input_frame_, ros::Time(0), ros::Duration(0.5));
+                    tf2::doTransform(camera_point, odom_point, transformStamped);
+                } catch (tf2::TransformException &ex) {
+                    ROS_WARN("%s",ex.what());
+                    ros::Duration(1.0).sleep();
+                    continue;
+                }
+
+                // If id is the requiered one -> this is the right obj -> publish it!
+                if(obj->instance_id==instance_id_){
+                    last_point_in_odom_ = odom_point.point;
+                    obj_stamped_msg_.objects.push_back(*obj);
+                
+                // Else -> check if the last point in odom frame is the approxiamtley the current point in odom
+                }else{
+                    geometry_msgs::Point candidate_point_in_odom = odom_point.point;
+
+                    // Compute euclidean distance
+                    float distance = sqrt(pow(last_point_in_odom_.x - candidate_point_in_odom.x, 2) +
+                                        pow(last_point_in_odom_.y - candidate_point_in_odom.y, 2) +
+                                        pow(last_point_in_odom_.z - candidate_point_in_odom.z, 2));
+                    
+                    // If is below some distance threshold -> it is the same object we want to track
+                    if(distance < distance_thresh_){
+
+                        // Change the requiered id, set the last point in odom to the current and publish the object
+                        instance_id_ = obj->instance_id;
+                        last_point_in_odom_ = candidate_point_in_odom;
+                        obj_stamped_msg_.objects.push_back(*obj);
+                    }
+                }
+
             }
         }
 

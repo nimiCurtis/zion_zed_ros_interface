@@ -17,6 +17,10 @@
 // ROS
 #include <ros/ros.h>
 #include <zed_interfaces/ObjectsStamped.h>
+#include <geometry_msgs/PointStamped.h>
+#include <geometry_msgs/Point.h>
+#include <tf2_ros/transform_listener.h>
+#include <tf2_geometry_msgs/tf2_geometry_msgs.h>
 
 // Custom
 #include <zion_msgs/set_target_objRequest.h>
@@ -77,6 +81,10 @@ class ObjDetectConverter
 
   //! ROS service server.
     ros::ServiceServer set_target_service_server_;  
+
+  //! ROS tf2 helpers.
+    tf2_ros::Buffer tfBuffer_;
+    tf2_ros::TransformListener tfListener_;
   
   //! ROS topic name to subscribe to.
     std::string goalTopic_;
@@ -86,6 +94,9 @@ class ObjDetectConverter
   // Node variables
     int instance_id_;  // object instance
     string label_;     // object label
+    geometry_msgs::Point last_point_in_odom_;
+    float distance_thresh_;
+    string input_frame_; 
 };
 
 } /* namespace */
