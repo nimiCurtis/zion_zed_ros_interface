@@ -79,8 +79,9 @@ class ObjDetectConverter
   //! ROS topic publisher.
     ros::Publisher obj_detect_publisher_;
 
-  //! ROS service server.
+  //! ROS service server & client.
     ros::ServiceServer set_target_service_server_;  
+    ros::ServiceClient set_target_service_client_;
 
   //! ROS tf2 helpers.
     tf2_ros::Buffer tfBuffer_;

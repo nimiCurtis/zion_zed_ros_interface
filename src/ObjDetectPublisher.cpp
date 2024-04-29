@@ -55,7 +55,7 @@ namespace object_detect {
         last_point_in_odom_.x = 0.0;
         last_point_in_odom_.y = 0.0;
         last_point_in_odom_.z = 0.0;
-        
+
         // Subscribers
         obj_detect_subscriber_ = nodeHandle_.subscribe(ObjDetSubTopic_, 1,
                                         &ObjDetectConverter::objDetectCallback, this);
@@ -66,6 +66,8 @@ namespace object_detect {
         // Services
         set_target_service_server_ = nodeHandle_.advertiseService(node_name +"/set_target_object",
                                                     &ObjDetectConverter::setTargetServiceCallback, this);
+        
+        set_target_service_client_ = nodeHandle_.serviceClient<zion_msgs::set_target_obj>(node_name +"/set_target_object");
 
         ROS_INFO_STREAM("Successfully launched " << node_name);
 
@@ -150,20 +152,34 @@ namespace object_detect {
                     
                     // If is below some distance threshold -> it is the same object we want to track
                     if(distance < distance_thresh_){
+                        
+                        // Use the service!
+                        zion_msgs::set_target_obj srv;
+                        srv.request.instance_id = obj->instance_id;
+                        srv.request.label = obj->label;
 
                         // Change the requiered id, set the last point in odom to the current and publish the object
-                        instance_id_ = obj->instance_id;
-                        last_point_in_odom_ = candidate_point_in_odom;
-                        obj_stamped_msg_.objects.push_back(*obj);
+                        if (set_target_service_client_.call(srv)) {
+                            if (srv.response.result) {
+                                ROS_INFO_STREAM("Successfully updated target: " << srv.response.info);
+                                last_point_in_odom_ = candidate_point_in_odom;
+                                obj_stamped_msg_.objects.push_back(*obj);
+                            } else {
+                                ROS_WARN_STREAM("Failed to update target: " << srv.response.info);
+                            }
+                        } else {
+                            ROS_ERROR("Failed to call service set_target_object");
+                        }
                     }
                 }
 
             }
-        }
+        } // for
 
         // Publish
         obj_detect_publisher_.publish(obj_stamped_msg_);
-    }
+    
+    } // function callback
 
     bool ObjDetectConverter::setTargetServiceCallback(zion_msgs::set_target_objRequest& request,
                             zion_msgs::set_target_objResponse& response)
@@ -178,7 +194,7 @@ namespace object_detect {
             response.info = "set target object to label: " + label_ + " | instance_id: " + to_string(instance_id_);
             response.result = true;
         } else {
-            response.info = "fail. stay with object label: " + label_ + " | instance_id: " + to_string(instance_id_);
+            response.info = "stay with object label: " + label_ + " | instance_id: " + to_string(instance_id_);
             response.result = false;
         }
 
