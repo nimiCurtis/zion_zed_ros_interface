@@ -38,19 +38,20 @@ namespace object_detect {
         
 
         // Check the topic of detection is alive
-        auto message = ros::topic::waitForMessage<zed_interfaces::ObjectsStamped>(ObjDetSubTopic_,
-                                        nodeHandle_, ros::Duration(10.0));
-        while(ros::ok() && !message) {
-            if (message) {
-                ROS_INFO("Received Object message");
-                break;  // Exit loop if message is received
-            } else {
+        // auto message = ros::topic::waitForMessage<zed_interfaces::ObjectsStamped>(ObjDetSubTopic_,
+        //                                 nodeHandle_, ros::Duration(10.0));
+        while(ros::ok() && ros::topic::waitForMessage<zed_interfaces::ObjectsStamped>(ObjDetSubTopic_,
+                                        nodeHandle_, ros::Duration(3.0))) {
+            // if (message) {
+            //     break;  // Exit loop if message is received
+            // } else {
                 ROS_WARN_STREAM("No message received on " << ObjDetSubTopic_ <<  " . Waiting...");
-                auto message = ros::topic::waitForMessage<zed_interfaces::ObjectsStamped>(ObjDetSubTopic_,
-                                        nodeHandle_, ros::Duration(3.0));
-            }
+                // auto message = ros::topic::waitForMessage<zed_interfaces::ObjectsStamped>(ObjDetSubTopic_,
+                //                         nodeHandle_, ros::Duration(3.0));
+            // }
         }
-
+        
+        ROS_INFO("Received Object message");
         // Init last_point_in_odom_ in 0,0,0
         last_point_in_odom_.x = 0.0;
         last_point_in_odom_.y = 0.0;
