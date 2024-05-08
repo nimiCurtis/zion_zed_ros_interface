@@ -98,6 +98,9 @@ class ObjDetectConverter
     geometry_msgs::Point last_point_in_odom_;
     float distance_thresh_;
     string input_frame_; 
+    vector<int> instances_list_;
+    float min_dist_;
+    int instance_min_dist;
 };
 
 } /* namespace */
