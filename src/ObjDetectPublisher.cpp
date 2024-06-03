@@ -112,11 +112,23 @@ namespace object_detect {
         // Init msg & transformStamped
         zed_interfaces::ObjectsStamped obj_stamped_msg_;
         obj_stamped_msg_.header = msg.header;
+        auto obj_candidate_ptr = msg.objects.end(); // Initialize to end()
         geometry_msgs::TransformStamped transformStamped;
+        bool call_service = false;
+        float min_dist = 100.;
+
+
+        // TODO: chack if it is necessery to lookup for a specific transform -> I think its better
+        // Transform camera point to odom frame
+        try{
+            transformStamped = tfBuffer_.lookupTransform("odom", input_frame_, ros::Time(0), ros::Duration(0.5));
+        } catch (tf2::TransformException &ex) {
+            ROS_WARN("%s",ex.what());
+            ros::Duration(1.0).sleep();
+        }
 
         // Pull the specific instance from the objects list 
         for(auto obj = msg.objects.begin(); obj != msg.objects.end(); obj++){
-            
             // Check valid label
             if(obj->label == label_){
                 geometry_msgs::PointStamped camera_point;
@@ -129,22 +141,15 @@ namespace object_detect {
                 camera_point.point.y = obj->position[1];
                 camera_point.point.z = obj->position[2];
 
-                // TODO: chack if it is necessery to lookup for a specific transform -> I think its better
-                // Transform camera point to odom frame
-                try{
-                    transformStamped = tfBuffer_.lookupTransform("odom", input_frame_, ros::Time(0), ros::Duration(0.5));
-                    tf2::doTransform(camera_point, odom_point, transformStamped);
-                } catch (tf2::TransformException &ex) {
-                    ROS_WARN("%s",ex.what());
-                    ros::Duration(1.0).sleep();
-                    continue;
-                }
+                tf2::doTransform(camera_point, odom_point, transformStamped);
 
                 // If id is the requiered one -> this is the right obj -> publish it!
                 if(obj->instance_id==instance_id_){
                     last_point_in_odom_ = odom_point.point;
-                    obj_stamped_msg_.objects.push_back(*obj);
-
+                    obj_candidate_ptr = obj;
+                    obj_stamped_msg_.objects.push_back(*obj_candidate_ptr);
+                    call_service = false;
+                    break;
                 // Else -> check if the last point in odom frame is the approxiamtley the current point in odom
                 }else{
                     geometry_msgs::Point candidate_point_in_odom = odom_point.point;
@@ -154,107 +159,40 @@ namespace object_detect {
                                         pow(last_point_in_odom_.y - candidate_point_in_odom.y, 2) +
                                         pow(last_point_in_odom_.z - candidate_point_in_odom.z, 2));
                     
-                    // If is below some distance threshold -> it is the same object we want to track
-                    if(distance < distance_thresh_){
-                        
-                        // Use the service!
-                        zion_msgs::set_target_obj srv;
-                        srv.request.instance_id = obj->instance_id;
-                        srv.request.label = obj->label;
-
-                        // Change the requiered id, set the last point in odom to the current and publish the object
-                        if (set_target_service_client_.call(srv)) {
-                            if (srv.response.result) {
-                                ROS_INFO_STREAM("Successfully updated target: " << srv.response.info);
-                                last_point_in_odom_ = candidate_point_in_odom;
-                                obj_stamped_msg_.objects.push_back(*obj);
-                            } else {
-                                ROS_WARN_STREAM("Failed to update target: " << srv.response.info);
-                            }
-                        } else {
-                            ROS_ERROR("Failed to call service set_target_object");
+                    if(distance < min_dist){
+                        min_dist = distance;
+                        if (min_dist < distance_thresh_){
+                            last_point_in_odom_ = candidate_point_in_odom;
+                            obj_candidate_ptr = obj;
+                            call_service = true;
                         }
                     }
                 }
-    // void ObjDetectConverter::objDetectCallback(const zed_interfaces::ObjectsStamped& msg)
-    // {
-    //     // Init msg & transformStamped
-    //     zed_interfaces::ObjectsStamped obj_stamped_msg_;
-    //     obj_stamped_msg_.header = msg.header;
-    //     geometry_msgs::TransformStamped transformStamped;
-
-    //     // Pull the specific instance from the objects list 
-    //     for(auto obj = msg.objects.begin(); obj != msg.objects.end(); obj++){
-            
-    //         // Check valid label
-    //         if(obj->label == label_){
-                
-    //             instances_list_.push_back(obj->instance_id);
-        
-    //             geometry_msgs::PointStamped camera_point;
-    //             geometry_msgs::PointStamped odom_point;
-                
-
-    //             // Init point in camera frame
-    //             camera_point.header.frame_id = input_frame_; 
-    //             camera_point.header.stamp = ros::Time::now();
-    //             camera_point.point.x = obj->position[0];
-    //             camera_point.point.y = obj->position[1];
-    //             camera_point.point.z = obj->position[2];
-
-    //             // TODO: chack if it is necessery to lookup for a specific transform -> I think its better
-    //             // Transform camera point to odom frame
-    //             try{
-    //                 transformStamped = tfBuffer_.lookupTransform("odom", input_frame_, ros::Time(0), ros::Duration(0.5));
-    //                 tf2::doTransform(camera_point, odom_point, transformStamped);
-    //             } catch (tf2::TransformException &ex) {
-    //                 ROS_WARN("%s",ex.what());
-    //                 ros::Duration(1.0).sleep(); //?
-    //                 continue;
-    //             }
-
-    //             // If id is the requiered one -> this is the right obj -> publish it!
-    //             if(obj->instance_id==instance_id_){
-    //                 last_point_in_odom_ = odom_point.point;
-    //                 obj_stamped_msg_.objects.push_back(*obj);
-
-    //             // Else -> check if the last point in odom frame is the approxiamtley the current point in odom
-    //             }else{
-    //                 geometry_msgs::Point candidate_point_in_odom = odom_point.point;
-
-    //                 // Compute euclidean distance
-    //                 float distance = sqrt(pow(last_point_in_odom_.x - candidate_point_in_odom.x, 2) +
-    //                                     pow(last_point_in_odom_.y - candidate_point_in_odom.y, 2) +
-    //                                     pow(last_point_in_odom_.z - candidate_point_in_odom.z, 2));
-                    
-    //                 // If is below some distance threshold -> it is the same object we want to track
-    //                 if(distance < distance_thresh_){
-                        
-    //                     // Use the service!
-    //                     zion_msgs::set_target_obj srv;
-    //                     srv.request.instance_id = obj->instance_id;
-    //                     srv.request.label = obj->label;
-
-    //                     // Change the requiered id, set the last point in odom to the current and publish the object
-    //                     if (set_target_service_client_.call(srv)) {
-    //                         if (srv.response.result) {
-    //                             ROS_INFO_STREAM("Successfully updated target: " << srv.response.info);
-    //                             last_point_in_odom_ = candidate_point_in_odom;
-    //                             obj_stamped_msg_.objects.push_back(*obj);
-    //                         } else {
-    //                             ROS_WARN_STREAM("Failed to update target: " << srv.response.info);
-    //                         }
-    //                     } else {
-    //                         ROS_ERROR("Failed to call service set_target_object");
-    //                     }
-    //                 }
-                // }
             }
         } // for
 
+        // Use the service!
+        if(call_service && obj_candidate_ptr != msg.objects.end()){
+            zion_msgs::set_target_obj srv;
+            srv.request.instance_id = obj_candidate_ptr->instance_id;
+            srv.request.label = obj_candidate_ptr->label;
+
+            // Change the requiered id, set the last point in odom to the current and publish the object
+            if (set_target_service_client_.call(srv)) {
+                if (srv.response.result) {
+                    ROS_INFO_STREAM("Successfully updated target: " << srv.response.info);
+                    obj_stamped_msg_.objects.push_back(*obj_candidate_ptr);
+                } else {
+                    ROS_WARN_STREAM("Failed to update target: " << srv.response.info);
+                }
+            } else {
+                ROS_ERROR("Failed to call service set_target_object");
+            }
+        }
+
         // Publish
         obj_detect_publisher_.publish(obj_stamped_msg_);
-    
+
     } // function callback
 
     bool ObjDetectConverter::setTargetServiceCallback(zion_msgs::set_target_objRequest& request,
