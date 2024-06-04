@@ -124,14 +124,6 @@ class ZedRecordManager(object):
                 self._save_camera_info()
                 self._save_recording_params()
                 self.recording_service = rospy.Service("~record",SetBool,self._record_callback)
-                
-
-                try:
-                    rospy.wait_for_service("/zedm/zed_node/reset_odometry",timeout=2.)
-                    self.reset_odom_client = rospy.ServiceProxy("/zedm/zed_node/reset_odometry", reset_odometry)
-                except rospy.ServiceException as e:
-                    print("Service call failed: %s"%e)
-                
 
                 while not rospy.is_shutdown():
                     if self._is_recording:
@@ -191,15 +183,6 @@ class ZedRecordManager(object):
         """
         
         if request.data:
-            if not self._is_recording:
-                reset_odom = self.reset_odom_client()
-                if reset_odom.reset_done:
-                    rospy.loginfo("Odom reset succeed")
-                    self.rosbag_recorder.start()
-                    self._record_counter+=1
-                    self._is_recording = True
-                    self._ros_start_time = rospy.Time.now()
-            else:
                 return SetBoolResponse(success=False, message="Already recording.")
 
         elif not request.data:
