@@ -183,6 +183,12 @@ class ZedRecordManager(object):
         """
         
         if request.data:
+            if not self._is_recording:
+                self.rosbag_recorder.start()
+                self._record_counter+=1
+                self._is_recording = True
+                self._ros_start_time = rospy.Time.now()
+            else:
                 return SetBoolResponse(success=False, message="Already recording.")
 
         elif not request.data:
