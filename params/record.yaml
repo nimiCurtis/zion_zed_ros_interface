@@ -22,7 +22,7 @@ recording:
     - rgb
     - depth
     - odom
-    - target_object
+    # - target_object
     # - imu
 
 

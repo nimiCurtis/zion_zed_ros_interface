@@ -92,7 +92,7 @@ class ZedRecordManager(object):
         self.ctrl_c = False
         rospy.on_shutdown(self.shutdownhook)
 
-        self._target_obj_topic = topics.get("target_object",None)
+        self._target_obj_topic = topics.get("target_object") if "target_object" in topics_list_keys else None
         self._is_recording = False
         self._ros_start_time = rospy.Time.now()
         self._ros_current_time = rospy.Time.now()
