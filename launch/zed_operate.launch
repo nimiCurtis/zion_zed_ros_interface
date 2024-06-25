@@ -54,7 +54,7 @@ OF THIS SOFTWARE, EVEN IF ADVISED OF THE POSSIBILITY OF SUCH DAMAGE.
         </include>
     </group>
 
-    <arg name="publish_obj_det"     default="false" />
+    <arg name="publish_obj_det" default="false" />
     <group if="$(arg publish_obj_det)">
         <node name="obj_detect_publisher_node" pkg="zion_zed_ros_interface" type="obj_detect_publisher_node"  output="screen" required="true"><!-- launch-prefix="valgrind" -->
             <rosparam file="$(find zion_zed_ros_interface)/params/obj_detect_converter.yaml" command="load" />
