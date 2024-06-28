@@ -10,4 +10,4 @@ frames:
 object:
   label: Person # string, label according to the zed object detection labels 
   instance_id: 0 # int , the instance id of the object (defualt: 0)
-  distance_thresh: 0.25
+  distance_thresh: 0.5
