@@ -35,6 +35,7 @@ namespace object_detect {
         if (!readParameters()) {
             ROS_ERROR("Could not read parameters.");
             ros::requestShutdown();
+            return;
         }
 
 
@@ -121,10 +122,10 @@ namespace object_detect {
         // TODO: chack if it is necessery to lookup for a specific transform -> I think its better
         // Transform camera point to odom frame
         try{
-            transformStamped = tfBuffer_.lookupTransform("odom", input_frame_, ros::Time(0), ros::Duration(0.5));
+            transformStamped = tfBuffer_.lookupTransform("odom", input_frame_, ros::Time(0), ros::Duration(0.2));
         } catch (tf2::TransformException &ex) {
             ROS_WARN("%s",ex.what());
-            ros::Duration(1.0).sleep();
+            // ros::Duration(1.0).sleep();
         }
 
         // Pull the specific instance from the objects list 
@@ -136,7 +137,7 @@ namespace object_detect {
 
                 // Init point in camera frame
                 camera_point.header.frame_id = input_frame_; 
-                camera_point.header.stamp = ros::Time::now();
+                camera_point.header.stamp = msg.header.stamp;
                 camera_point.point.x = obj->position[0];
                 camera_point.point.y = obj->position[1];
                 camera_point.point.z = obj->position[2];

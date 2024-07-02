@@ -15,14 +15,15 @@ recording:
   script: record_zed.sh
   demonstrator: nimrod
   prefix: bag_batch 
-  bag_folder: ../../bag # Relative path to the parent bag folder 
+  bag_folder: /media/nimrod/Expansion/pilot/raanana_bags # Relative path to the parent bag folder 
   topics_to_rec:
     # - tf
     # - tf_static
     - rgb
     - depth
     - odom
-    # - target_object
+    - target_object
     # - imu
+  description: desc
 
 

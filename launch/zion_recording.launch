@@ -3,6 +3,7 @@
   <arg name="robot" default="zion" />
   <arg name="prefix" default="" />
   <arg name="demonstrator" default="" />
+  <arg name="description" default="" />
 
   <!-- <arg name="topics_to_rec" default="None" /> -->
 
@@ -16,7 +17,7 @@
             <!-- <param name="recording/prefix" value="$(arg prefix)"/> -->
             <param if="$(eval arg('prefix') != '')" name="recording/prefix" value="$(arg prefix)"/>
             <param if="$(eval arg('demonstrator') != '')" name="recording/demonstrator" value="$(arg demonstrator)"/>
-
+            <param if="$(eval arg('description') != '')" name="recording/description" value="$(arg description)"/>
         </node>
   </group>
 
