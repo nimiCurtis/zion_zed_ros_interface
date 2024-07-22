@@ -122,7 +122,7 @@ namespace object_detect {
         // TODO: chack if it is necessery to lookup for a specific transform -> I think its better
         // Transform camera point to odom frame
         try{
-            transformStamped = tfBuffer_.lookupTransform("odom", input_frame_, ros::Time(0), ros::Duration(0.2));
+            transformStamped = tfBuffer_.lookupTransform("odom", input_frame_, ros::Time(0), ros::Duration(0.3));
         } catch (tf2::TransformException &ex) {
             ROS_WARN("%s",ex.what());
             // ros::Duration(1.0).sleep();
