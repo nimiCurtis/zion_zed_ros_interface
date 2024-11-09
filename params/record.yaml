@@ -12,13 +12,14 @@ topics:
   target_object: /obj_detect_publisher_node/object
   goal_pose: /goal_pose_model
   goal_reach: /goal_reach
+  poses_path: /poses_path
 
 recording:
   script: record_zed.sh
   demonstrator: nimrod
   prefix: bag_batch 
-  # bag_folder: /media/nimrod/Expansion/pilot/raanana_bags # Relative path to the parent bag folder 
-  bag_folder: ../../bag # Relative path to the parent bag folder 
+  bag_folder: /media/roblab20/Expansion/pilot/test_easy # Relative path to the parent bag folder 
+  # bag_folder: ../../bag # Relative path to the parent bag folder 
   topics_to_rec:
     # - tf
     # - tf_static
@@ -27,8 +28,10 @@ recording:
     - odom
     - target_object
     # - imu
-    # - goal_pose
-    # - goal_reach
+    - goal_pose
+    - goal_reach
+    - poses_path
+
   description: desc
 
 

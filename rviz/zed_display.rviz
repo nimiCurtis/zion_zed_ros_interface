@@ -183,6 +183,7 @@ Visualization Manager:
             Mapping:
               Fused Pointcloud: true
               Value: true
+            Marker: true
             Path: true
             Pose: true
             RobotModel: false
@@ -539,6 +540,7 @@ Visualization Manager:
       Unreliable: false
       Value: false
       Visibility:
+        "": true
         Depth:
           Confidence image: true
           Confidence map: true
@@ -658,6 +660,14 @@ Visualization Manager:
       Topic: /poses_path_history
       Unreliable: false
       Value: true
+    - Class: rviz/Marker
+      Enabled: true
+      Marker Topic: /subgoal_marker
+      Name: Marker
+      Namespaces:
+        subgoal_marker: true
+      Queue Size: 100
+      Value: true
   Enabled: true
   Global Options:
     Background Color: 48; 48; 48
@@ -702,9 +712,9 @@ Visualization Manager:
       Invert Z Axis: false
       Name: Current View
       Near Clip Distance: 0.009999999776482582
-      Pitch: 0.3247967064380646
+      Pitch: 0.7147965431213379
       Target Frame: base_link
-      Yaw: 3.2653799057006836
+      Yaw: 2.910378932952881
     Saved: ~
 Window Geometry:
   Camera:
